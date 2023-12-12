@@ -1,0 +1,8 @@
+{
+  "name": "EffectNoteViewer",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "react-vite",
+  "id": "21f9d4c3"
+}

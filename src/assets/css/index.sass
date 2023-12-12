@@ -1,0 +1,386 @@
+@import mixins
+body, html
+    margin: 0
+    font-family: 'Monaco', monospace // Courier New?
+    height: 100%
+    line-height: unset
+
+a
+    color: unset
+
+span
+    &::selection
+        color: unset
+        background: unset
+.center
+    text-align: center
+    margin-left: auto
+    margin-right: auto
+.setting-table
+    border-spacing: 10px
+    border-collapse: separate
+
+.setting-theme-key
+    font-size: 11px
+    padding: 10px
+
+$layout-header-height: 63px
+$layout-footer-height: 20px
+.layout-header
+    height: $layout-header-height
+    display: flex
+    flex-direction: row
+    align-items: center
+
+.rtf-toolbox
+    font-size: 20px
+
+.drawio-viewer
+    width: 100%
+
+.horizontal-drag
+    height: 100%
+    width: 3px
+    cursor: ew-resize
+    flex-shrink: 0
+
+.layout-footer
+    height: $layout-footer-height
+    padding: 0
+
+.header-menu
+    height: $layout-header-height
+    flex-grow: 1
+
+$padding-v: 10px
+
+.header-setting
+    height: $layout-header-height
+    padding: 0 10px
+    float: right
+    display: flex
+    align-items: center
+
+.input-hack
+    position: absolute
+    left: -999999em
+    display: inline-block
+    border: none
+    caret-color: transparent
+    &:focus
+        outline: 0px solid transparent
+
+.logo
+    float: left
+    width: 30px
+    height: 30px
+    margin: 16px 16px 16px 0
+
+.header-title
+    font-family: 'Herculanum', 'Arial', 'Microsoft Yahei'
+    font-size: x-large
+    margin-right: 16px
+    -webkit-user-select: none
+
+.node-markdown
+    display: flex
+    flex-direction: column
+
+.vditor-reset.node-markdown
+    hr
+        margin: 1em 0px
+    blockquote
+        display: flex
+        border-left: solid 3.5px
+        padding: 14px 14px
+        border-bottom-right-radius: 6px
+        border-top-right-radius: 6px
+
+.vditor-reset
+    ul
+        display: flex
+        flex-direction: column
+    ol
+        display: flex
+        flex-direction: column
+
+$sub-before-search-height: 272px
+.sub-before-search
+    height: $sub-before-search-height
+    margin-left: 23em
+    margin-right: 23em
+    padding-top: 128px
+    padding-bottom: 112px
+
+.sub-board-row
+    @include calc(height, '100% - #{$sub-before-search-height}')
+    display: flex
+    flex-direction: row
+    .sub-board-filelist
+        background-color: unset
+        width: 300px
+        padding-right: 5em
+        overflow: auto
+
+$sub-after-search-height: 45px
+.sub-after-search
+    height: $sub-after-search-height
+    padding-left: 1em
+    padding-right: 45em
+    padding-top: 13px
+
+.sub-board-column
+    @include calc(height, '100% - #{$sub-after-search-height}')
+    display: flex
+    flex-direction: column
+    overflow: auto
+    .sub-board-filelist
+        width: 100%
+
+.sub-search-result-wrapper
+    @include calc(height, '100% - #{$sub-after-search-height}')
+    display: flex
+    flex-direction: row
+    justify-content: space-between
+    .sub_filelist_after_search
+        background-color: unset
+        width: 400px
+        padding-right: 10em
+        padding-bottom: 8em
+        overflow: auto
+
+.node-html
+    .bold
+        font-weight: bold
+    .italic
+        font-style: italic
+    .red-color
+        color: rgba(212, 76, 71, 1)
+    .yellow-color
+        color: rgba(217, 115, 13, 1)
+    .green-color
+        color: rgba(68, 131, 97, 1)
+    .blue-color
+        color: rgba(51, 126, 169, 1)
+    .purple-color
+        color: rgba(144, 101, 176, 1)
+    .grey-color
+        color: rgba(120, 119, 116, 1)
+    .red-background
+        border-radius: 6px
+        padding: 0.2em 0.4em
+        background-color: #FFBDAD
+    .yellow-background
+        border-radius: 6px
+        padding: 0.2em 0.4em
+        background-color: #FFF0B3
+    .green-background
+        border-radius: 6px
+        padding: 0.2em 0.4em
+        background-color: #ABF5D1
+    .cyan-background
+        border-radius: 6px
+        padding: 0.2em 0.4em
+        background-color: #B3F5FF
+    .blue-background
+        border-radius: 6px
+        padding: 0.2em 0.4em
+        background-color: #B3D4FF
+    .purple-background
+        border-radius: 6px
+        padding: 0.2em 0.4em
+        background-color: #C0B6F2
+    code
+        border-radius: 3px
+        padding: 0.2em 0.4em
+        font-size: 85%
+    blockquote
+        padding-left: 1em
+        padding-top: 14px
+        padding-bottom: 14px
+        border-bottom-right-radius: 6px
+        border-top-right-radius: 6px
+        border-left: solid 3.5px
+        margin-left: 0px
+        margin-inline-end: 0px
+    input[type='checkbox']
+        margin: 9px 9px
+
+    table
+        border-style: solid
+        border-width: 1px
+        border-collapse: collapse
+        th
+            border-style: solid
+            border-width: 1px
+            border-collapse: collapse
+        td
+            border-style: solid
+            border-width: 1px
+            border-collapse: collapse
+            padding-left: 5px
+
+#view
+    table
+        border-collapse: collapse
+        td, th
+            padding: 5px
+
+$node-min-height: 24px
+.node
+    // min height should be at least font size
+    .node-text
+        padding-left: 160px
+        margin-right: 40px
+        margin-left: -150px
+        display: block
+        overflow-wrap: break-word
+        white-space: pre-wrap
+        span
+            line-height: 1.2
+    .drag-hint
+        height: 3px
+        width: calc(100% - 2em)
+
+$file-toolbar-height: 36px
+.file-toolbar
+    height: $file-toolbar-height
+    display: flex
+    align-items: center
+    justify-content: space-between
+    padding: 5px 0
+    border-bottom: 2px solid
+
+.file-list-collapse
+    @include calc(height, '100% - 32px')
+
+.session-area
+    @include calc(height, '100% - #{$file-toolbar-height}')
+    position: relative
+    display: flex
+    flex-direction: row
+    overflow: auto
+    padding-top: 10px
+    padding-bottom: 8em
+.view-only-session
+    padding: 10px 10px
+.session-content
+    padding-top: 1em
+    padding-bottom: 8em
+    flex-grow: 1
+    height: fit-content
+
+.session-area-with-comment
+    .session-content
+        @include calc(max-width, '100% - 250px')
+.comment-area
+    width: 250px
+    flex-shrink: 0
+.comment-box
+    width: 240px
+    padding: 5px
+    &:hover
+        transform: translateX(-5px)
+        transition-duration: 200ms
+        background: rgba(255, 212, 0, .1)
+        z-index: 100
+
+.comment_underline
+    border-bottom: 2px solid rgb(255, 212, 0)
+    padding-bottom: 2px
+.comment_underline.comment_underline_focus
+    background: rgba(255, 212, 0, .3)
+
+
+.effect-block-wrapper.effect-code-block
+    border-radius: 0px
+
+.effect-block-wrapper
+    position: relative
+    margin-right: 1em
+    margin-bottom: 5px
+    border: 1px solid
+    border-radius: 6px
+    .effect-block-placehoder
+        background-color: rgb(240, 240, 240, 0.5)
+        padding-right: 1em
+        display: flex
+        flex-grow: 1
+        justify-content: space-between
+        align-items: center
+        .ant-select-selector
+            background: unset
+    .effect-block-header
+        background-color: rgb(240, 240, 240, 0.5)
+        position: absolute
+        top: 0
+        right: 0
+        padding-left: 1em
+        padding-right: 1em
+        display: flex
+        justify-content: flex-end
+        align-items: center
+        z-index: 2
+        .ant-select-selector
+            background: unset
+
+    .effect-block-header-hidden
+        opacity: 0
+
+.export-textarea
+    width: 100%
+    height: 300px
+    overflow: auto
+    outline: none
+    border-color: #e0e0e0
+.block-with-icon
+    position: relative
+.board-block
+    display: flex
+.board-vertical-block.block
+    padding-left: 0px
+
+.block
+    font-size: 14px
+    $icon-padding: 15px
+    .check-icon
+        padding-right: 12px
+    .header-icon-left
+        padding-right: 12px
+    .header-icon-right
+        padding-left: 12px
+    .bullet
+        float: left
+        position: relative
+        display: inline-block
+        margin-left: - $icon-padding
+        cursor: pointer
+    .fold-icon
+        position: absolute
+        top: -10px
+        right: 0
+        cursor: pointer
+
+.searchBox
+    white-space: pre-wrap
+    padding: 10px
+    margin-bottom: 20px
+
+.hotkey
+    padding: 2px
+    border-radius: 5px
+
+@keyframes blink
+    50%
+        visibility: hidden
+
+.blink-background
+    animation: blink .5s step-end infinite alternate
+
+.hidden
+    display: none
+    visibility: hidden
+
+//.ant-tree
+//    .ant-tree-indent-unit
+//        width: 20px
