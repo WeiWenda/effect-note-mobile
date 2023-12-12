@@ -1,6 +1,6 @@
 ## Installation
 ```
-gem install cocoapods
+brew install cocoapods
 npm install -g @ionic/cli @capacitor/assets
 ```
 
