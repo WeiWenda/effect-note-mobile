@@ -16,6 +16,7 @@ npm i
 npm run build
 npx cap sync ios
 npx cap open ios
+brew install carthage
 ```
 
 ## Android Build
@@ -28,7 +29,7 @@ npx cap open android
 
 
 ## Thanks To
-- [ionic-framework]([https://github.com/facebook/react](https://github.com/ionic-team/ionic-framework)
+- [ionic-framework](https://github.com/ionic-team/ionic-framework)
 - [capacitor](https://github.com/ionic-team/capacitor)
 - [vimflowy](https://github.com/WuTheFWasThat/vimflowy)
 - [ant-design](https://github.com/ant-design/ant-design)
