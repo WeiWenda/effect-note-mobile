@@ -223,7 +223,7 @@ export default class Document extends EventEmitter {
   }
 
 
-  public async _newChild(parent: Row, index = -1, serializedRow: number | undefined): Promise<AttachedChildInfo> {
+  public async _newChild(parent: Row, index = -1, serializedRow: number | undefined = undefined): Promise<AttachedChildInfo> {
     let row;
     if (serializedRow === undefined) {
       row = await this.store.getNew();

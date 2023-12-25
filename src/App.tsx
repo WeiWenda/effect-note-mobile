@@ -80,7 +80,7 @@ function App (props: {session: Session}) {
     const mappings = config.defaultMappings;
     const keyBindings = new KeyBindings(keyDefinitions, mappings);
     const pluginManager = new PluginsManager(props.session, config, keyBindings);
-    let enabledPlugins = ['Marks', 'Tags', 'Links', 'HTML', 'Todo', 'Markdown', 'CodeSnippet', 'LaTeX'];
+    let enabledPlugins = ['Marks', 'Tags', 'Links', 'HTML', 'Todo', 'Markdown', 'CodeSnippet', 'LaTeX', 'DataLoom'];
     enabledPlugins.reduce((p: Promise<void>, plugin_name) =>
         p.then(() => pluginManager.enable(plugin_name)), Promise.resolve()).then(() => {
           setLoading(false);
