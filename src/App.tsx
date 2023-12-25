@@ -220,7 +220,7 @@ function App (props: {session: Session}) {
                         const workspace = await Preferences.get({ key: 'workspace' })
                         const openFile = await Preferences.get({ key: 'open_file' })
                         if (workspace.value && openFile.value) {
-                          const contentBeforeReplace = await props.session.getCurrentContent(Path.root(), 'application/json');
+                          const contentBeforeReplace = await props.session.getCurrentContent(Path.root(), 'application/json', true);
                           const content = contentBeforeReplace.replaceAll(`http://localhost:51223/${workspace.value ?? 'default'}`, 'http://localhost:51223/api');
                           GitOperation.updateContent({workspace: workspace.value!, path: openFile.value!, content}).then(() => {
                             props.session.setMode('NORMAL');

@@ -127,7 +127,7 @@ function DocComponent(props: {session: Session, eventBus: EventEmitter<{[key: st
     const workspace = await Preferences.get({ key: 'workspace' });
     const open_file = await Preferences.get({ key: 'open_file'});
     const unSaveKey = `${workspace.value}:${open_file.value}:unsave`;
-    const content = await props.session.getCurrentContent(Path.root(), 'application/json');
+    const content = await props.session.getCurrentContent(Path.root(), 'application/json', true);
     await Preferences.set({key: unSaveKey, value: content});
   }
   const reloadContent = async (docInfo: DocInfo, checkRemoteUpdate: boolean) => {

@@ -9,7 +9,7 @@
 /* Begin PBXBuildFile section */
 		048B602C2B0B887A00B6C3D7 /* ObjectiveGit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 048B602B2B0B887A00B6C3D7 /* ObjectiveGit.framework */; };
 		048B602D2B0B887A00B6C3D7 /* ObjectiveGit.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 048B602B2B0B887A00B6C3D7 /* ObjectiveGit.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		048B60302B0B88BE00B6C3D7 /* ObjectiveGit.framework.dSYM in CopyFiles */ = {isa = PBXBuildFile; fileRef = 048B602F2B0B88BE00B6C3D7 /* ObjectiveGit.framework.dSYM */; };
+		048B60302B0B88BE00B6C3D7 /* ObjectiveGit.framework.dSYM in Copy Files */ = {isa = PBXBuildFile; fileRef = 048B602F2B0B88BE00B6C3D7 /* ObjectiveGit.framework.dSYM */; };
 		04BEB7462B0B40030060007B /* GitOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04BEB7452B0B40030060007B /* GitOperation.swift */; };
 		04BEB74A2B0B40A10060007B /* GitOperationPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04BEB7492B0B40A10060007B /* GitOperationPlugin.swift */; };
 		04BEB7502B0B457A0060007B /* GitOperationPlugin.m in Sources */ = {isa = PBXBuildFile; fileRef = 04BEB74F2B0B457A0060007B /* GitOperationPlugin.m */; };
@@ -24,14 +24,15 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		048B602A2B0B879600B6C3D7 /* CopyFiles */ = {
+		048B602A2B0B879600B6C3D7 /* Copy Files */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = "";
 			dstSubfolderSpec = 16;
 			files = (
-				048B60302B0B88BE00B6C3D7 /* ObjectiveGit.framework.dSYM in CopyFiles */,
+				048B60302B0B88BE00B6C3D7 /* ObjectiveGit.framework.dSYM in Copy Files */,
 			);
+			name = "Copy Files";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		048B602E2B0B887B00B6C3D7 /* Embed Frameworks */ = {
@@ -170,7 +171,7 @@
 				504EC3021FED79650016851F /* Resources */,
 				9592DBEFFC6D2A0C8D5DEB22 /* [CP] Embed Pods Frameworks */,
 				048B60252B0B859B00B6C3D7 /* Run Script */,
-				048B602A2B0B879600B6C3D7 /* CopyFiles */,
+				048B602A2B0B879600B6C3D7 /* Copy Files */,
 				048B602E2B0B887B00B6C3D7 /* Embed Frameworks */,
 			);
 			buildRules = (

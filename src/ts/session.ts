@@ -511,11 +511,12 @@ export default class Session extends EventEmitter {
     return kmNode;
   }
 
-  public async exportContent(mimetype: string) {
-    const jsonContent = await this.document.serialize(this.cursor.row);
+  public async exportContent(mimetype: string, saveID: boolean) {
     if (mimetype === 'application/json') {
+      const jsonContent = await this.document.serialize(this.cursor.row, {saveID});
       return JSON.stringify(jsonContent, undefined, 2);
     } else if (mimetype === 'text/markdown') {
+      const jsonContent = await this.document.serialize(this.cursor.row, {saveID, saveIndex: true});
       const exportLines = function(node: any, curDepth: number) {
         if (typeof(node) === 'string') {
           return [`${node}`];
@@ -524,6 +525,14 @@ export default class Session extends EventEmitter {
         const children = node.children || [];
         if (node.plugins?.md) {
           lines.push(node.plugins.md);
+        } else if (node.plugins?.is_callout) {
+          lines.push(`> ${node.text}`);
+        } else if (node.plugins?.is_check !== undefined) {
+          lines.push(`${node.plugins.is_check ? '* [x]' : '* [ ]'} ${node.text}`);
+        } else if (node.plugins?.code) {
+          lines.push('```' + node.plugins.code.language);
+          lines.push(node.plugins.code.content);
+          lines.push('```');
         } else if (children.length > 0 && curDepth <= 6 && curDepth > 0) {
           lines.push(`${'#'.repeat(curDepth)} ${node.text}`);
         } else if (node.text.length > 0) {
@@ -541,6 +550,7 @@ export default class Session extends EventEmitter {
       }
       return exportLines(jsonContent, curDepth).join('\n');
     } else if (mimetype === 'text/plain') {
+      const jsonContent = await this.document.serialize(this.cursor.row, {saveID, saveIndex: true});
       // Workflowy compatible plaintext export
       //   Ignores 'collapsed' and viewRoot
       const indent = '  ';
@@ -565,10 +575,10 @@ export default class Session extends EventEmitter {
     }
   }
 
-  public async getCurrentContent(path: Path, mimetype: string) {
+  public async getCurrentContent(path: Path, mimetype: string, saveID: boolean = false) {
     const oldPath = this.cursor.path;
     await this.cursor.setPath(path);
-    const content = await this.exportContent(mimetype);
+    const content = await this.exportContent(mimetype, saveID);
     await this.cursor.setPath(oldPath);
     return content;
   }
