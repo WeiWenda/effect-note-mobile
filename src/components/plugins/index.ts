@@ -6,6 +6,7 @@ import './tags';
 import './links';
 import './markdown';
 import './code';
+import './dataloom';
 
 // for developers: uncomment the following lines
 /*

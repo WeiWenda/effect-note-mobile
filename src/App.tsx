@@ -58,10 +58,13 @@ function App (props: {session: Session}) {
       theme = window.matchMedia('(prefers-color-scheme: light)').matches ? themes.Default : themes.Dark;
       if (window.matchMedia('(prefers-color-scheme: light)').matches) {
         document.body.classList.toggle('dark', false);
+        props.session.clientStore.setClientSetting('curTheme', 'Light');
       } else {
         document.body.classList.toggle('dark', true);
+        props.session.clientStore.setClientSetting('curTheme', 'Dark');
       }
     } else {
+      props.session.clientStore.setClientSetting('curTheme', themeName);
       if (themeName === 'Dark') {
         document.body.classList.toggle('dark', true);
       } else {
