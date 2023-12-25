@@ -297,7 +297,6 @@ function DocComponent(props: {session: Session, eventBus: EventEmitter<{[key: st
     props.session.clientStore.setClientSetting('curDocId', docID);
     props.session.clientStore.setDocname(docID);
     props.session.document.store.setBackend(new InMemory(), newDocName);
-    props.session.document.store.resetSetCounter(false);
     props.session.document.root = Path.root();
     props.session.cursor.reset();
     props.session.stopAnchor();

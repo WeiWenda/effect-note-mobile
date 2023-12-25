@@ -182,8 +182,8 @@ class DocumentCache {
   }
   public setChildRows(row: Row, childRows: Array<Row>) {
     this.update(row, (cachedRow) =>
-      this.updateChildren(cachedRow.setChildRows(childRows))
-    , true);
+        this.updateChildren(cachedRow.setChildRows(childRows))
+      , true);
   }
   public setParentRows(row: Row, parentRows: Array<Row>) {
     this.update(row, (cachedRow) => cachedRow.setParentRows(parentRows), true);
@@ -223,8 +223,14 @@ export default class Document extends EventEmitter {
   }
 
 
-  public async _newChild(parent: Row, index = -1): Promise<AttachedChildInfo> {
-    const row = await this.store.getNew();
+  public async _newChild(parent: Row, index = -1, serializedRow: number | undefined): Promise<AttachedChildInfo> {
+    let row;
+    if (serializedRow === undefined) {
+      row = await this.store.getNew();
+    } else {
+      row = serializedRow;
+      this.store.setMaxRowId(row);
+    }
 
     // NOTE: order is important for caching.
     // - first emit async so plugins can prepare for what will happen
@@ -283,9 +289,9 @@ export default class Document extends EventEmitter {
   public async fullLoadTree(row: Row) {
     const cachedRow = await this.getInfo(row);
     await Promise.all(
-        cachedRow.childRows.map(
-            async (childRow) => await this.fullLoadTree(childRow)
-        )
+      cachedRow.childRows.map(
+        async (childRow) => await this.fullLoadTree(childRow)
+      )
     );
   }
 
@@ -678,7 +684,7 @@ export default class Document extends EventEmitter {
 
     const lastCommon = _.last(commonAncestry);
     if (lastCommon == null) {
-        throw new Error(`No common ancestor found between ${path1} and ${path2}`);
+      throw new Error(`No common ancestor found between ${path1} and ${path2}`);
     }
     const firstDifference = commonAncestry.length;
     return [lastCommon, ancestors1.slice(firstDifference), ancestors2.slice(firstDifference)];
@@ -739,8 +745,8 @@ export default class Document extends EventEmitter {
     });
   }
 
-  public async newChild(path: Path, index = -1) {
-    const { row } = await this._newChild(path.row, index);
+  public async newChild(path: Path, index = -1, serializedRow: number | undefined) {
+    const { row } = await this._newChild(path.row, index, serializedRow);
     return path.child(row);
   }
 
@@ -828,16 +834,23 @@ export default class Document extends EventEmitter {
 
   public async serialize(
     row = this.root.row,
-    options: {pretty?: boolean} = {},
+    options: {saveIndex?: boolean, pretty?: boolean, saveID?: boolean, indexInParent?: number} = {},
     serialized: {[row: number]: SerializedBlock} = {}
   ): Promise<SerializedBlock> {
     if (row in serialized) {
-      const clone_struct: any = serialized[row];
-      clone_struct.id = row;
+      // const clone_struct: any = serialized[row];
+      // clone_struct.id = row;
       return { clone: row };
     }
 
     const struct: any = await this.serializeRow(row);
+    if (options.saveID) {
+      struct.id = row;
+    }
+    if (options.indexInParent) {
+      struct.text = `${options.indexInParent}. ${struct.text}`;
+      delete options.indexInParent;
+    }
     // NOTE: this must be done in order due to cloning
     // const children = await Promise.all((await this._getChildren(row)).map(
     //   async (childrow) => await this.serialize(childrow, options, serialized)
@@ -846,7 +859,7 @@ export default class Document extends EventEmitter {
     let children: Array<any> = [];
     for (let i = 0; i < childRows.length; i++) {
       children.push(
-        await this.serialize(childRows[i], options, serialized)
+        await this.serialize(childRows[i], (options.saveIndex && struct.plugins?.is_order) ? {...options, indexInParent: i + 1} : options, serialized)
       );
     }
     if (children.length) {
@@ -857,9 +870,9 @@ export default class Document extends EventEmitter {
 
     if (options.pretty) {
       if ((children.length === 0) &&
-          (!await this.isClone(row)) &&
-          (!struct.plugins)
-         ) {
+        (!await this.isClone(row)) &&
+        (!struct.plugins)
+      ) {
         return struct.text;
       }
     }
@@ -884,10 +897,10 @@ export default class Document extends EventEmitter {
     // if parent_path has only one child and it's empty, delete it
     let path;
     if (replace_empty && children.length === 1 &&
-        ((await this.getLine(children[0].row)).length === 0)) {
+      ((await this.getLine(children[0].row)).length === 0)) {
       path = children[0];
     } else {
-      path = await this.newChild(parent_path, index);
+      path = await this.newChild(parent_path, index, serialized.id);
     }
 
     if (typeof serialized === 'string') {
@@ -936,7 +949,7 @@ export default class Document extends EventEmitter {
       parentRows: [],
       childRows: [],
       pluginData: {}
-    })
+    });
     await this.store.setLine(0, ''.split(''));
     await this.store.setChildren(0, []);
     await this.store.setCollapsed(0, false);

@@ -299,10 +299,7 @@ export default class BlockComponent extends React.Component<BlockProps, {}> {
       }
       const elLine = (
         <RowComponent key='row'
-          style={{
-            fontSize: this.props.topLevel ? 20 : undefined,
-            marginBottom: this.props.topLevel ? 10 : undefined,
-          }}
+          style={rowStyle}
           cursorsTree={cursorsTree}
           cursorBetween={this.props.cursorBetween}
           session={session} path={parent}
