@@ -1,4 +1,23 @@
+@use "sass:meta"
 @import mixins
+
+html[data-theme="light"]
+    @include meta.load-css("./github.css")
+    --w-e-textarea-bg-color: #FFFFFF
+    --w-e-toolbar-bg-color: #f6f8fa
+    --w-e-toolbar-color: #586069
+    --w-e-textarea-color: #24292e
+html[data-theme="dark"]
+    @include meta.load-css("./github-dark.css")
+    --w-e-textarea-slight-bg-color: #0d1117
+    --w-e-textarea-bg-color: #24292e
+    --w-e-toolbar-bg-color: #1d2125
+    --w-e-toolbar-active-bg-color: #454a50
+    --w-e-toolbar-color: #b9b9b9
+    --w-e-toolbar-active-color: #b9b9b9
+    --w-e-toolbar-disabled-color: #3f454b
+    --w-e-textarea-color: #d1d5da
+
 body, html
     margin: 0
     font-family: 'Monaco', monospace // Courier New?
@@ -62,7 +81,7 @@ $padding-v: 10px
     align-items: center
 
 .input-hack
-    position: absolute
+    position: fixed
     left: -999999em
     display: inline-block
     border: none
@@ -236,8 +255,6 @@ $node-min-height: 24px
         display: block
         overflow-wrap: break-word
         white-space: pre-wrap
-        span
-            line-height: 1.2
     .drag-hint
         height: 3px
         width: calc(100% - 2em)
@@ -265,8 +282,7 @@ $file-toolbar-height: 36px
 .view-only-session
     padding: 10px 10px
 .session-content
-    padding-top: 1em
-    padding-bottom: 8em
+    padding-top: 10px
     flex-grow: 1
     height: fit-content
 
@@ -352,6 +368,7 @@ $file-toolbar-height: 36px
     .bullet
         float: left
         position: relative
+        top: 5px
         display: inline-block
         margin-left: - $icon-padding
         cursor: pointer

@@ -37,6 +37,7 @@ import BreadcrumbsComponent from "./Breadcrumbs";
 import {Preferences} from "@capacitor/preferences";
 import ContentEditable from "react-contenteditable";
 import {Keyboard} from "@capacitor/keyboard";
+import $ from "jquery";
 
 const { Search } = Input;
 
@@ -118,7 +119,7 @@ function DocComponent(props: {session: Session, eventBus: EventEmitter<{[key: st
     }
   }
   const onMove = (detail: GestureDetail) => {
-    if (detail.deltaX > 30 && detail.deltaY < 30) {
+    if (detail.startX < 50 && detail.deltaX > 30 && detail.deltaY < 30) {
       console.log('gesture swipe');
       onBack();
     }
@@ -218,6 +219,10 @@ function DocComponent(props: {session: Session, eventBus: EventEmitter<{[key: st
 
   useEffect(() => {
     refreshDocs();
+    props.session.on('scrollTo', async (clickY) => {
+      await contentRef.current?.scrollByPoint(0, clickY - window.innerHeight/4, 100);
+      return Promise.resolve()
+    });
     const gesture = createGesture({
       el: contentRef.current,
       onEnd: (detail) => onMove(detail),

@@ -63,7 +63,9 @@ export default class SessionComponent extends React.Component<Props, State> {
       const session = this.props.session;
       switch (e.detail) {
         case 1:
-          $(document).trigger('click');
+          const event = $.Event( "click" );
+          event.pageY = e.pageY;
+          $(document).trigger(event);
           e.stopPropagation();
           break;
         case 2: {
@@ -287,6 +289,7 @@ export default class SessionComponent extends React.Component<Props, State> {
     // TODO: have an extra breadcrumb indicator when not at viewRoot?
     return (
       <div className='session-content'
+           style={{paddingBottom: window.innerHeight / 2}}
            onMouseLeave={() => {
              this.props.session.setHoverRow(null);
            }}

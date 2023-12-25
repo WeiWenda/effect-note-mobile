@@ -44,13 +44,14 @@ const session = new Session(clientStore, doc, {
     return page_height / line_height;
   },
 });
-$(document).on('click', function() {
-  console.log('document click');
+$(document).on('click', function(e) {
   // if settings menu is up, we don't want to blur (the dropdowns need focus)
   if (session.mode !== 'INSERT') { return; }
   if (session.stopMonitor) {return;}
   if (session.cursor.path.isRoot()) {return;}
+  console.log('document click', e.pageY);
   $('#input-hack').focus();
+  session.emit('scrollTo', e.pageY);
 });
 root.render(
   // <React.StrictMode>

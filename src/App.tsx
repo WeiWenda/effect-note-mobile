@@ -43,6 +43,7 @@ import {Preferences} from "@capacitor/preferences";
 import './components/plugins';
 import {GitOperation} from "./plugins/git-operation";
 import {message} from "antd";
+import $ from "jquery";
 
 setupIonicReact();
 
@@ -220,6 +221,7 @@ function App (props: {session: Session}) {
                     e.stopPropagation();
                     setTimeout(() => {
                       present({message: '正在保存...'}).then(async () => {
+                        $('#input-hack').blur();
                         const workspace = await Preferences.get({ key: 'workspace' })
                         const openFile = await Preferences.get({ key: 'open_file' })
                         if (workspace.value && openFile.value) {
@@ -244,6 +246,7 @@ function App (props: {session: Session}) {
                   <IonTabButton tab="tab3" href='/input' onClick={(e) => {
                     e.stopPropagation();
                     setTimeout(() => {
+                      $('#input-hack').focus();
                       props.session.setMode('INSERT');
                     }, 200);
                   }}>
