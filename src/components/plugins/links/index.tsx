@@ -56,7 +56,7 @@ export class LinksPlugin {
         const onCheckChange = (tags: string[], prefix: string, row: number) => {
             const dateString = Moment().format('yyyy-MM-DD HH:mm:ss');
             let filteredTags = tags?.filter(t => !t.startsWith(prefix))
-              .filter(t => !['Delay', 'Done', 'Todo', 'Doing'].includes(t)) || [];
+                .filter(t => !['Delay', 'Done', 'Todo', 'Doing'].includes(t)) || [];
             filteredTags = [prefix + dateString,  ...filteredTags];
             const newStatus = getTaskStatus(filteredTags);
             if (newStatus) {
@@ -75,7 +75,7 @@ export class LinksPlugin {
             };
         };
         this.api.registerListener('session', 'setBlockCollapse', async (row: Row, collapse: boolean) => {
-           await this.setBlockCollapse(row, collapse);
+            await this.setBlockCollapse(row, collapse);
         });
         this.api.registerListener('session', 'clearPluginStatus', async () => {
             await this.clearLinks();
@@ -89,6 +89,9 @@ export class LinksPlugin {
         this.api.registerListener('session', 'setCode', async (row: Row, code: string, language: string, wrap: boolean) => {
             await this.setCode(row, code, language, wrap);
         });
+        this.api.registerListener('session', 'setDataLoom', async (row: Row, state: string, setting: string) => {
+            await this.setDataLoom(row, state, setting);
+        });
         this.api.registerListener('session', 'setRTF', async (row: Row, html: string) => {
             await this.setRTF(row, html);
         });
@@ -101,6 +104,14 @@ export class LinksPlugin {
                 await this.setIsBoard(row, false);
             } else {
                 await this.setIsBoard(row, true);
+            }
+        });
+        this.api.registerListener('session', 'toggleCallout', async (row: Row) => {
+            const isCalloutNow = await this.getIsCallout(row);
+            if (isCalloutNow) {
+                await this.setIsCallout(row, false);
+            } else {
+                await this.setIsCallout(row, true);
             }
         });
         this.api.registerListener('session', 'toggleOrder', async (row: Row) => {
@@ -123,23 +134,25 @@ export class LinksPlugin {
         });
         this.api.registerHook('document', 'pluginRowContents', async (obj, { row }) => {
             const is_board = await this.getIsBoard(row);
+            const is_callout = await this.getIsCallout(row);
             const is_order = await this.getIsOrder(row);
             const is_check = await this.getIsCheck(row);
             const collapse = await this.getCollapse(row);
             const ids_to_pngs = await this.api.getData('ids_to_pngs', {});
             const png = ids_to_pngs[row] || null;
-            const ids_to_xmls = await this.api.getData('ids_to_xmls', {});
-            const xml = ids_to_xmls[row] || null;
+            const xml = await this.getXml(row);
             const md = await this.getMarkdown(row);
             const code = await this.getCode(row);
+            const dataloom = await this.getDataLoom(row);
             const rtf = await this.getRTF(row);
-            obj.links = { is_order, is_board, is_check, collapse, png, xml, md, code, rtf};
+            obj.links = { is_callout, is_order, is_board, is_check, collapse, png, xml, md, code, rtf, dataloom};
             return obj;
         });
         this.api.registerHook('session', 'renderLineTokenHook', (tokenizer, {pluginData}) => {
-            if (pluginData.links?.code || pluginData.links?.xml || pluginData.links?.md || pluginData.links?.rtf) {
+            if (pluginData.links?.code || pluginData.links?.xml ||
+                pluginData.links?.md || pluginData.links?.rtf || pluginData.links?.dataloom) {
                 return tokenizer.then(new PartialUnfolder<Token, React.ReactNode>((
-                  _token: Token, _emit: EmitFn<React.ReactNode>, _wrapped: Tokenizer
+                    _token: Token, _emit: EmitFn<React.ReactNode>, _wrapped: Tokenizer
                 ) => {
                     // do nothing
                 }));
@@ -156,6 +169,10 @@ export class LinksPlugin {
             if (isBoard) {
                 struct.is_board = isBoard;
             }
+            const isCallout = await this.getIsCallout(info.row);
+            if (isCallout) {
+                struct.is_callout = isCallout;
+            }
             const isOrder = await this.getIsOrder(info.row);
             if (isOrder) {
                 struct.is_order = isOrder;
@@ -168,9 +185,9 @@ export class LinksPlugin {
             if (ids_to_pngs[info.row] != null) {
                 struct.png = ids_to_pngs[info.row];
             }
-            const ids_to_xmls = await this.api.getData('ids_to_xmls', {});
-            if (ids_to_xmls[info.row] != null) {
-                struct.drawio = ids_to_xmls[info.row];
+            const xml = await this.getXml(info.row);
+            if (xml !== null) {
+                struct.drawio = xml;
             }
             const md = await this.getMarkdown(info.row);
             if (md != null) {
@@ -184,6 +201,10 @@ export class LinksPlugin {
             if (code != null) {
                 struct.code = code;
             }
+            const dataloom = await this.getDataLoom(info.row);
+            if (dataloom != null) {
+                struct.dataloom = dataloom;
+            }
             return struct;
         });
         this.api.registerListener('document', 'loadRow', async (path, serialized) => {
@@ -192,6 +213,9 @@ export class LinksPlugin {
             }
             if (serialized.is_board) {
                 await this._setIsBoard(path.row, true);
+            }
+            if (serialized.is_callout) {
+                await this._setIsCallout(path.row, true);
             }
             if (serialized.is_order) {
                 await this._setIsOrder(path.row, true);
@@ -208,6 +232,9 @@ export class LinksPlugin {
             }
             if (serialized.code) {
                 await this._setCode(path.row, serialized.code.content, serialized.code.language, serialized.code.wrap || true);
+            }
+            if (serialized.dataloom) {
+                await this._setDataLoom(path.row, serialized.dataloom.content, serialized.dataloom.setting);
             }
             if (serialized.rtf) {
                 await this._setRTF(path.row, serialized.rtf);
@@ -251,13 +278,13 @@ export class LinksPlugin {
                             });
                         });
                     }} /> : <BorderOutlined key={'check-icon'} className={'check-icon'} onClick={() => {
-                                onCheckChange(tags, 'end: ', path.row).then(() => {
-                                    this.setIsCheck(path.row, true).then(() => {
-                                        addStrikeThrough(this.session, path.row).then(() => {
-                                            this.session.emit('updateInner');
-                                        });
-                                    });
+                        onCheckChange(tags, 'end: ', path.row).then(() => {
+                            this.setIsCheck(path.row, true).then(() => {
+                                addStrikeThrough(this.session, path.row).then(() => {
+                                    this.session.emit('updateInner');
                                 });
+                            });
+                        });
                     }}/>
                 );
             }
@@ -266,18 +293,18 @@ export class LinksPlugin {
         this.api.registerHook('session', 'renderAfterLine', (elements, {path, line, pluginData}) => {
             if (pluginData.links?.xml != null) {
                 elements.push(
-                  <DrawioViewer key={'drawio'} session={that.session} row={path.row} content={pluginData.links.xml}/>
+                    <DrawioViewer key={'drawio'} session={that.session} row={path.row} content={pluginData.links.xml}/>
                 );
             }
             if (pluginData.links?.png != null) {
                 elements.push(
                     <Tag key={'mindmap-icon'} icon={<PictureOutlined />}
-                      onClick={() => pluginData.links.png.visible = true}
-                      style={{
-                          marginLeft: '5px',
-                          ...getStyles(this.session.clientStore, ['theme-bg-secondary', 'theme-trim', 'theme-text-primary'])
-                      }} >
-                     脑图
+                         onClick={() => pluginData.links.png.visible = true}
+                         style={{
+                             marginLeft: '5px',
+                             ...getStyles(this.session.clientStore, ['theme-bg-secondary', 'theme-trim', 'theme-text-primary'])
+                         }} >
+                        脑图
                     </Tag>,
                     <Image
                         key='mindmap-preview'
@@ -314,6 +341,8 @@ export class LinksPlugin {
         await this.api.setData('ids_to_board', {});
         await this.api.setData('ids_to_order', {});
         await this.api.setData('ids_to_check', {});
+        await this.api.setData('ids_to_callout', {});
+        await this.api.setData('ids_to_datalooms', {});
     }
 
     public async getPng(row: Row): Promise<any> {
@@ -345,8 +374,23 @@ export class LinksPlugin {
         }
     }
 
+    public async getDataLoom(row: Row): Promise<any> {
+        const ids_to_datalooms = await this.api.getData('ids_to_datalooms', {});
+        if (ids_to_datalooms[row]) {
+            const dataloom = await this.api.getData(row + ':dataloom', {});
+            return dataloom;
+        } else {
+            return null;
+        }
+    }
+
     public async setCode(row: Row, content: string, language: string, wrap: boolean): Promise<void> {
         await this._setCode(row, content, language, wrap);
+        await this.api.updatedDataForRender(row);
+    }
+
+    public async setDataLoom(row: Row, content: string, setting: string): Promise<void> {
+        await this._setDataLoom(row, content, setting);
         await this.api.updatedDataForRender(row);
     }
 
@@ -373,6 +417,14 @@ export class LinksPlugin {
         await this.api.setData('ids_to_codes', ids_to_mds);
     }
 
+    private async _setDataLoom(row: Row, content: string, setting: string): Promise<void> {
+        await this.api.setData(row + ':dataloom', {content, setting});
+        // 不存在的key查询效率较差
+        const ids_to_datalooms = await this.api.getData('ids_to_datalooms', {});
+        ids_to_datalooms[row] = 1;
+        await this.api.setData('ids_to_datalooms', ids_to_datalooms);
+    }
+
     private async _setRTF(row: Row, content: string): Promise<void> {
         await this.api.setData(row + ':rtf', content);
         // 不存在的key查询效率较差
@@ -391,7 +443,12 @@ export class LinksPlugin {
 
     public async getXml(row: Row): Promise<any> {
         const ids_to_xmls = await this.api.getData('ids_to_xmls', {});
-        return ids_to_xmls[row];
+        if (ids_to_xmls[row]) {
+            const xml = await this.api.getData(row + ':xml', '');
+            return xml;
+        } else {
+            return null;
+        }
     }
 
     public async setXml(row: Row, xml: String): Promise<void> {
@@ -400,8 +457,10 @@ export class LinksPlugin {
     }
 
     private async _setXml(row: Row, xml: String): Promise<void> {
+        await this.api.setData(row + ':xml', xml);
+        // 不存在的key查询效率较差
         const ids_to_xmls = await this.api.getData('ids_to_xmls', {});
-        ids_to_xmls[row] = xml;
+        ids_to_xmls[row] = 1;
         await this.api.setData('ids_to_xmls', ids_to_xmls);
     }
 
@@ -468,6 +527,19 @@ export class LinksPlugin {
         ids_to_board[row] = mark;
         await this.api.setData('ids_to_board', ids_to_board);
     }
+    public async getIsCallout(row: Row): Promise<boolean | null> {
+        const ids_to_callout = await this.api.getData('ids_to_callout', {});
+        return ids_to_callout[row] || null;
+    }
+    public async setIsCallout(row: Row, is_callout: boolean) {
+        await this._setIsCallout(row, is_callout);
+        await this.api.updatedDataForRender(row);
+    }
+    private async _setIsCallout(row: Row, is_callout: boolean) {
+        const ids_to_callout = await this.api.getData('ids_to_callout', {});
+        ids_to_callout[row] = is_callout;
+        await this.api.setData('ids_to_callout', ids_to_callout);
+    }
     public async getIsOrder(row: Row): Promise<boolean | null> {
         const ids_to_order = await this.api.getData('ids_to_order', {});
         return ids_to_order[row] || null;
@@ -484,20 +556,20 @@ export class LinksPlugin {
 }
 export const linksPluginName = 'Links';
 registerPlugin<LinksPlugin>(
-  {
-    name: linksPluginName,
-    author: 'WeiWenda',
-    description: (
-      <div>
-       允许每个节点增加一个http外链，用于提供pdf、ppt、wiki。
-      </div>
-    ),
-    dependencies: [tagsPluginName, pluginName],
-  },
+    {
+        name: linksPluginName,
+        author: 'WeiWenda',
+        description: (
+            <div>
+                允许每个节点增加一个http外链，用于提供pdf、ppt、wiki。
+            </div>
+        ),
+        dependencies: [tagsPluginName, pluginName],
+    },
     async function(api) {
-      const linksPlugin = new LinksPlugin(api);
-      await linksPlugin.enable();
-      return linksPlugin;
-  },
-  (api => api.deregisterAll()),
+        const linksPlugin = new LinksPlugin(api);
+        await linksPlugin.enable();
+        return linksPlugin;
+    },
+    (api => api.deregisterAll()),
 );
