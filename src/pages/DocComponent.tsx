@@ -220,7 +220,7 @@ function DocComponent(props: {session: Session, eventBus: EventEmitter<{[key: st
   useEffect(() => {
     refreshDocs();
     props.session.on('scrollTo', async (clickY) => {
-      await contentRef.current?.scrollByPoint(0, clickY - window.innerHeight/4, 100);
+      await contentRef.current?.scrollByPoint(0, clickY - window.innerHeight/3, 100);
       return Promise.resolve()
     });
     const gesture = createGesture({
@@ -462,7 +462,7 @@ function DocComponent(props: {session: Session, eventBus: EventEmitter<{[key: st
                 <IonToolbar style={{position: 'fixed', bottom: 0}}>
                   <IonButtons slot="start">
                     <IonButton onClick={() => {
-                      props.session.keyHandler?.queueKey('virtual+copy');
+                      props.session.keyHandler?.queueKey('meta+c');
                     }}>
                       <IonIcon color="dark" slot="icon-only" icon={copyOutline}></IonIcon>
                     </IonButton>

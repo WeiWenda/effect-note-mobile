@@ -15,6 +15,7 @@ import {
 } from '../../ts/utils/token_unfolder';
 import Session from '../../ts/session';
 import Path from '../../ts/path';
+import { sendTouchEvent} from "../../ts/utils/util";
 
 export type LineProps = {
   lineData: Line;
@@ -46,7 +47,6 @@ export default class LineComponent extends React.Component<LineProps, {input: st
   }
 
   public render() {
-    let mouseDown: boolean = false;
     const cursorBetween: boolean = this.props.cursorBetween || false;
     const lineData = _.cloneDeep(this.props.lineData);
     const cursors = this.props.cursors || {};
@@ -146,37 +146,51 @@ export default class LineComponent extends React.Component<LineProps, {input: st
               key: `default-${column}`,
               className: classes.join(' '),
               onClick: onClick,
-              onMouseDown: (e) => {
-                if (path && e.detail === 1) {
-                  mouseDown = true;
-                  setTimeout(() => {
-                    mouseDown = false;
-                  }, 200);
+              onTouchStart: (e) => {
+                if (path) {
+                  console.log(`onTouchStart setAnchor ${path.row} ${column}`);
                   session.selecting = false;
-                  session.setAnchor(path, column);
+                  session.setAnchor(path!, column);
                   e.stopPropagation();
                 }
               },
-              onMouseUp: (e) => {
-                if (path && e.detail === 1) {
-                  if (!mouseDown && !session.selecting && session.getAnchor()) {
-                    console.log(`onColMouseUp set selectInlinePath ${path}`);
-                    session.selecting = true;
-                    session.selectInlinePath = path;
-                    session.cursor.setPosition(path, column).then(() => {
-                      session.emit('updateInner');
-                    });
-                  } else if (mouseDown && session.anchor.col === column) {
-                    console.log('onCharClick');
-                    if (e.shiftKey) {
-                      session.setAnchor(session.cursor.path, session.cursor.col);
-                      session.selecting = true;
-                    } else {
-                      session.stopAnchor();
+              // for debug
+              // onMouseUp: (e) => {
+              //   const element = document.elementFromPoint(e.pageX, e.pageY);
+              //   if (element) {
+              //     sendTouchEvent(e.pageX, e.pageY, element, 'touchend');
+              //   }
+              //   e.stopPropagation();
+              // },
+              onTouchEnd: (e) => {
+                if (path) {
+                  if (e.changedTouches.length > 0) {
+                    const touchEnd = e.changedTouches[e.changedTouches.length-1];
+                    const element = document.elementFromPoint(touchEnd.pageX, touchEnd.pageY);
+                    if (element) {
+                      sendTouchEvent(touchEnd.pageX, touchEnd.pageY, element, 'touchend');
                     }
-                    session.cursor.setPosition(path, column).then(() => {
-                      session.emit('updateInner');
-                    });
+                  } else {
+                    console.log(`onTouchEnd ${path.row} ${column}`);
+                    if (!session.selecting && session.anchor.col !== column) {
+                      console.log(`onColMouseUp set selectInlinePath ${path}`);
+                      session.selecting = true;
+                      session.selectInlinePath = path;
+                      session.cursor.setPosition(path, column).then(() => {
+                        session.emit('updateInner');
+                      });
+                    } else if (session.anchor.col === column) {
+                      console.log('onCharClick');
+                      if (e.shiftKey) {
+                        session.setAnchor(session.cursor.path, session.cursor.col);
+                        session.selecting = true;
+                      } else {
+                        session.stopAnchor();
+                      }
+                      session.cursor.setPosition(path, column).then(() => {
+                        session.emit('updateInner');
+                      });
+                    }
                   }
                 }
                 e.stopPropagation();

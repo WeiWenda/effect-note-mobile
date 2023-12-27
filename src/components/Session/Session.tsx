@@ -102,9 +102,9 @@ export default class SessionComponent extends React.Component<Props, State> {
 
     this.onLineClick = async (path) => {
       const session = this.props.session;
-      console.log('onLineClick');
       // 防止select不上
       if (!session.selecting) {
+        console.log('onLineClick');
         // if clicking outside of text, but on the row,
         // move cursor to the end of the row
         let col = this.cursorBetween() ? -1 : -2;

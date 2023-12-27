@@ -12,6 +12,7 @@ import { PartialUnfolder, Token } from '../../ts/utils/token_unfolder';
 import { getStyles } from '../../ts/themes';
 import {IonButton, IonIcon} from '@ionic/react';
 import {caretDownSharp, caretForwardSharp} from 'ionicons/icons';
+import {sendTouchEvent} from "../../ts/utils/util";
 
 
 type RowProps = {
@@ -160,23 +161,30 @@ class RowComponent extends React.Component<RowProps, {showDragHint: boolean}> {
            onMouseLeave={() => {
              this.setState({showDragHint: false});
            }}
-        onMouseDown={(e) => {
-          if (e.detail === 1 && !this.props.session.selectPopoverOpen) {
+        onTouchStart={(e) => {
+          if (!this.props.session.selectPopoverOpen) {
             // 颜色面板在其他block上层
-            console.log('onLineMouseDown');
+            console.log('onLineTouchStart');
             session.selecting = false;
             session.setAnchor(path, -1);
           }
         }}
-        onMouseUp={(e) => {
-          if (e.detail === 1 && session.selecting === false && session.getAnchor() !== null &&
-            (!session.anchor.path.is(path) || session.anchor.col !== -1)) {
-            console.log(`onLineMouseUp set selectInlinePath ${path}`);
-            session.selecting = true;
-            session.selectInlinePath = path;
-            session.cursor.setPosition(path, -1).then(() => {
-              session.emit('updateInner');
-            });
+        onTouchEnd={(e) => {
+          if (session.selecting === false && session.getAnchor() !== null) {
+            if (e.changedTouches.length > 0) {
+              const touchEnd = e.changedTouches[e.changedTouches.length - 1];
+              const element = document.elementFromPoint(touchEnd.pageX, touchEnd.pageY);
+              if (element) {
+                sendTouchEvent(touchEnd.pageX, touchEnd.pageY, element, 'touchend');
+              }
+            } else if (session.anchor.col !== -1) {
+              console.log(`onLineTouchEnd set selectInlinePath ${path.row}`);
+              session.selecting = true;
+              session.selectInlinePath = path;
+              session.cursor.setPosition(path, -1).then(() => {
+                session.emit('updateInner');
+              });
+            }
           }
         }}
         style={this.props.style}
