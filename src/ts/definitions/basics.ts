@@ -640,27 +640,18 @@ keyDefinitions.registerAction(new Action(
         const items = await navigator.clipboard.read();
         // Loop through all items, looking for any kind of image
         for (let i = 0; i < items.length; i++) {
-          if (items[i].types.some(type => type.indexOf('image') !== -1)) {
-            // We need to represent the image as a file
-            let blob = await items[i].getType(items[i].types[0]);
-            const uploadRes = await uploadImage(new File([blob], 'clipboard-image'),
-              session.clientStore.getClientSetting('curDocId'));
-            const uploadUrl = uploadRes.data.pop().url;
-            await session.pasteText(`<div class='node-html'><p><img src="${uploadUrl}" alt="image.png" data-href="${uploadUrl}" style="width: 100%;"/></p></div>`);
-          } else {
-            const blob = await items[i].getType(items[i].types[0]);
-            let text = await blob.text();
-            text = text.replace(/(?:\r)/g, '');  // Remove \r (Carriage Return) from each line
-            const mimetype = mimetypeLookupByContent(text);
-            if (!mimetype) {
-              if (session.getAnchor() !== null && session.selecting) {
-                await session.yankDelete();
-              }
-              await session.pasteText(text);
-            } else {
-              session.showMessage(`识别到${mimetype}格式，导入中...`);
-              await session.importContent(text, mimetype, session.cursor.path);
+          const blob = await items[i].getType(items[i].types[0]);
+          let text = await blob.text();
+          text = text.replace(/(?:\r)/g, '');  // Remove \r (Carriage Return) from each line
+          const mimetype = mimetypeLookupByContent(text);
+          if (!mimetype) {
+            if (session.getAnchor() !== null && session.selecting) {
+              await session.yankDelete();
             }
+            await session.pasteText(text);
+          } else {
+            // session.showMessage(`识别到${mimetype}格式，导入中...`);
+            await session.importContent(text, mimetype, session.cursor.path);
           }
         }
       } else {

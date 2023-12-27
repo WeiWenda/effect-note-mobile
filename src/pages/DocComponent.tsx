@@ -23,7 +23,7 @@ import {
 import {
   arrowRedoOutline,
   arrowUndoOutline,
-  checkboxOutline,
+  checkboxOutline, clipboardOutline,
   copyOutline,
   filterOutline,
   pricetagsOutline
@@ -465,13 +465,18 @@ function DocComponent(props: {session: Session, eventBus: EventEmitter<{[key: st
           </IonHeader>
           <IonContent ref={contentRef} fullscreen>
             {
-              toolBoxHeight > 0 &&
+              toolBoxHeight >= 0 &&
                 <div style={{display: 'flex', zIndex: 1001, position: 'fixed', bottom: 0, height: '48px', width: '100%', overflowX: 'auto', ...getStyles(props.session.clientStore, ['theme-bg-secondary'])}}>
                   <IonButtons slot="start">
                     <IonButton onClick={() => {
                       props.session.keyHandler?.queueKey('meta+c');
                     }}>
                       <IonIcon style={{height: '22px'}} color="dark" slot="icon-only" icon={copyOutline}></IonIcon>
+                    </IonButton>
+                    <IonButton onClick={() => {
+                      props.session.keyHandler?.queueKey('meta+v');
+                    }}>
+                      <IonIcon style={{height: '22px'}} color="dark" slot="icon-only" icon={clipboardOutline}></IonIcon>
                     </IonButton>
                     <IonButton onClick={() => {
                       props.session.emitAsync('toggleCheck', props.session.cursor.row).then(() => {
@@ -500,6 +505,13 @@ function DocComponent(props: {session: Session, eventBus: EventEmitter<{[key: st
                       });
                     }}>
                       <IonIcon style={{height: '22px'}} color="dark" slot="icon-only" icon={pricetagsOutline}></IonIcon>
+                    </IonButton>
+                    <IonButton onClick={() => {
+                      props.session.emitAsync('toggleCallout', props.session.cursor.row).then(() => {
+                        props.session.emit('updateInner');
+                      });
+                    }}>
+                      <img className={'toolbar-img'} src={`images/quote.png`}/>
                     </IonButton>
                     <IonButton onClick={() => {
                       props.session.keyHandler?.queueKey('shift+tab');
