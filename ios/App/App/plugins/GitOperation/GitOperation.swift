@@ -67,8 +67,12 @@ public class GitOperation: NSObject {
       let repo = try GTRepository.init(url: localDir)
       let index = try repo.index()
       let indexEntry = index.entry(withPath: path)
-      let blob = try repo.lookUpObject(by: indexEntry!.oid) as! GTBlob
-      return blob.content() ?? ""
+      if (indexEntry != nil) {
+        let blob = try repo.lookUpObject(by: indexEntry!.oid) as! GTBlob
+        return blob.content() ?? ""
+      } else {
+        return nil
+      }
     } catch {
       print(error)
       return nil
