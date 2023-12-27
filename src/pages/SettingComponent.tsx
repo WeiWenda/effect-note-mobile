@@ -8,7 +8,7 @@ import {
   IonLabel, IonList,
   IonPage, IonSelect, IonSelectOption,
   IonTitle, IonToggle,
-  IonToolbar, useIonAlert, useIonLoading, IonItemGroup, IonItemDivider
+  IonToolbar, useIonAlert, useIonLoading, IonItemGroup, IonItemDivider, IonText
 } from '@ionic/react';
 import {settingsOutline, trash, starSharp, scanOutline, arrowBackOutline} from "ionicons/icons";
 import { Preferences } from '@capacitor/preferences';
@@ -151,6 +151,12 @@ function SettingComponent(props: {eventBus: EventEmitter<{[key: string]: string}
             workspaces.length == 0 &&
             <IonItem>
               <IonLabel color={"medium"}>右上角扫描二维码，以添加工作空间</IonLabel>
+            </IonItem>
+          }
+          {
+            workspaces.length == 0 &&
+            <IonItem>
+              <IonText color={"warning"}>移动版依赖于桌面版，请先下载桌面版，并按帮助文档配置工作空间后再进行扫码</IonText>
             </IonItem>
           }
           {

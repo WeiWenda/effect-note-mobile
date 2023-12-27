@@ -20,7 +20,14 @@ import {
   useIonToast,
   useIonAlert
 } from '@ionic/react';
-import {arrowRedoOutline, arrowUndoOutline, checkboxOutline, copyOutline, filterOutline} from "ionicons/icons";
+import {
+  arrowRedoOutline,
+  arrowUndoOutline,
+  checkboxOutline,
+  copyOutline,
+  filterOutline,
+  pricetagsOutline
+} from "ionicons/icons";
 import {menuController} from '@ionic/core/components';
 import React, {useEffect, useMemo, useRef, useState} from "react";
 import {EventEmitter} from 'ahooks/lib/useEventEmitter';
@@ -459,19 +466,19 @@ function DocComponent(props: {session: Session, eventBus: EventEmitter<{[key: st
           <IonContent ref={contentRef} fullscreen>
             {
               toolBoxHeight > 0 &&
-                <IonToolbar style={{position: 'fixed', bottom: 0}}>
+                <div style={{display: 'flex', zIndex: 1001, position: 'fixed', bottom: 0, height: '48px', width: '100%', overflowX: 'auto', ...getStyles(props.session.clientStore, ['theme-bg-secondary'])}}>
                   <IonButtons slot="start">
                     <IonButton onClick={() => {
                       props.session.keyHandler?.queueKey('meta+c');
                     }}>
-                      <IonIcon color="dark" slot="icon-only" icon={copyOutline}></IonIcon>
+                      <IonIcon style={{height: '22px'}} color="dark" slot="icon-only" icon={copyOutline}></IonIcon>
                     </IonButton>
                     <IonButton onClick={() => {
                       props.session.emitAsync('toggleCheck', props.session.cursor.row).then(() => {
                         props.session.emit('updateInner');
                       });
                     }}>
-                      <IonIcon color="dark" slot="icon-only" icon={checkboxOutline}></IonIcon>
+                      <IonIcon style={{height: '22px'}} color="dark" slot="icon-only" icon={checkboxOutline}></IonIcon>
                     </IonButton>
                     <IonButton color={"dark"} onClick={() => {
                       props.session.emitAsync('toggleOrder', props.session.cursor.row).then(() => {
@@ -485,40 +492,47 @@ function DocComponent(props: {session: Session, eventBus: EventEmitter<{[key: st
                         props.session.emit('updateInner');
                       });
                     }}>
-                      <img src={`images/board.png`} height={22}/>
+                      <img className={'toolbar-img'} src={`images/board.png`}/>
+                    </IonButton>
+                    <IonButton onClick={() => {
+                      props.session.emitAsync('startTag', props.session.cursor.path).then(() => {
+                        props.session.emit('updateInner');
+                      });
+                    }}>
+                      <IonIcon style={{height: '22px'}} color="dark" slot="icon-only" icon={pricetagsOutline}></IonIcon>
                     </IonButton>
                     <IonButton onClick={() => {
                       props.session.keyHandler?.queueKey('shift+tab');
                     }}>
-                      <img src={`images/left-indent.png`} height={22} />
+                      <img className={'toolbar-img'} src={`images/left-indent.png`} />
                     </IonButton>
                     <IonButton onClick={() => {
                       props.session.keyHandler?.queueKey('tab');
                     }}>
-                      <img src={`images/right-indent.png`} height={22} />
+                      <img className={'toolbar-img'} src={`images/right-indent.png`} />
                     </IonButton>
                     <IonButton onClick={() => {
                       props.session.keyHandler?.queueKey('virtual+down');
                     }}>
-                      <img src={`images/move-down.png`} height={22} />
+                      <img className={'toolbar-img'} src={`images/move-down.png`} />
                     </IonButton>
                     <IonButton onClick={() => {
                       props.session.keyHandler?.queueKey('virtual+up');
                     }}>
-                      <img src={`images/move-up.png`} height={22} />
+                      <img className={'toolbar-img'} src={`images/move-up.png`} />
                     </IonButton>
                     <IonButton onClick={() => {
                       props.session.keyHandler?.queueKey('meta+z');
                     }}>
-                      <IonIcon color="dark" slot="icon-only" icon={arrowUndoOutline}></IonIcon>
+                      <IonIcon style={{height: '22px'}} color="dark" slot="icon-only" icon={arrowUndoOutline}></IonIcon>
                     </IonButton>
                     <IonButton onClick={() => {
                       props.session.keyHandler?.queueKey('meta+Z');
                     }}>
-                      <IonIcon color="dark" slot="icon-only" icon={arrowRedoOutline}></IonIcon>
+                      <IonIcon style={{height: '22px'}} color="dark" slot="icon-only" icon={arrowRedoOutline}></IonIcon>
                     </IonButton>
                   </IonButtons>
-                </IonToolbar>
+                </div>
             }
             <ContentEditable id='input-hack'
                              className='input-hack'
