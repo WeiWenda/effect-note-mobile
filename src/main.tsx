@@ -51,7 +51,9 @@ $(document).on('click', function(e) {
   if (session.cursor.path.isRoot()) {return;}
   console.log('document click', e.pageY);
   $('#input-hack').focus();
-  session.emit('scrollTo', e.pageY);
+  if (e.pageY) {
+    session.emit('scrollTo', e.pageY);
+  }
 });
 root.render(
   // <React.StrictMode>

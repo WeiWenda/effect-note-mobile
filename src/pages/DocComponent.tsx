@@ -38,13 +38,14 @@ import {FileOutlined, OrderedListOutlined} from '@ant-design/icons';
 import type {DataNode} from 'antd/es/tree';
 import {getStyles} from "../ts/themes";
 import {GitOperation} from "../plugins/git-operation";
-import {constructDocInfo, mimetypeLookup} from "../ts/utils/util";
+import {constructDocInfo, mimetypeLookup, mimetypeLookupByContent} from "../ts/utils/util";
 import defaultDocs from './docs.json';
 import BreadcrumbsComponent from "./Breadcrumbs";
 import {Preferences} from "@capacitor/preferences";
 import ContentEditable from "react-contenteditable";
 import {Keyboard} from "@capacitor/keyboard";
 import $ from "jquery";
+import {Clipboard} from "@capacitor/clipboard";
 
 const { Search } = Input;
 
@@ -465,80 +466,101 @@ function DocComponent(props: {session: Session, eventBus: EventEmitter<{[key: st
           </IonHeader>
           <IonContent ref={contentRef} fullscreen>
             {
-              toolBoxHeight >= 0 &&
-                <div style={{display: 'flex', zIndex: 1001, position: 'fixed', bottom: 0, height: '48px', width: '100%', overflowX: 'auto', ...getStyles(props.session.clientStore, ['theme-bg-secondary'])}}>
+              toolBoxHeight > 0 &&
+                <div
+                  onClick={(e) => {
+                    const event = $.Event( "click" );
+                    event.pageY = 0;
+                    $(document).trigger(event);
+                    e.stopPropagation();
+                  }}
+                  style={{display: 'flex', zIndex: 1001, position: 'fixed', bottom: 0, height: '48px', width: '100%', overflowX: 'auto', ...getStyles(props.session.clientStore, ['theme-bg-secondary'])}}>
                   <IonButtons slot="start">
-                    <IonButton onClick={() => {
+                    <IonButton onClick={(e) => {
                       props.session.keyHandler?.queueKey('meta+c');
                     }}>
                       <IonIcon style={{height: '22px'}} color="dark" slot="icon-only" icon={copyOutline}></IonIcon>
                     </IonButton>
-                    <IonButton onClick={() => {
-                      props.session.keyHandler?.queueKey('meta+v');
+                    <IonButton onClick={(e) => {
+                      Clipboard.read().then(async ({type, value}) => {
+                        const text = value.replace(/(?:\r)/g, '');  // Remove \r (Carriage Return) from each line
+                        const mimetype = mimetypeLookupByContent(text);
+                        if (!mimetype) {
+                          if (props.session.getAnchor() !== null && props.session.selecting) {
+                            await props.session.yankDelete();
+                          }
+                          await props.session.pasteText(text);
+                        } else {
+                          // session.showMessage(`识别到${mimetype}格式，导入中...`);
+                          await props.session.importContent(text, mimetype, props.session.cursor.path);
+                        }
+                        await presentMessage({message: `粘贴成功`, duration: 300})
+                        props.session.emit('updateInner');
+                      });
                     }}>
                       <IonIcon style={{height: '22px'}} color="dark" slot="icon-only" icon={clipboardOutline}></IonIcon>
                     </IonButton>
-                    <IonButton onClick={() => {
+                    <IonButton onClick={(e) => {
                       props.session.emitAsync('toggleCheck', props.session.cursor.row).then(() => {
                         props.session.emit('updateInner');
                       });
                     }}>
                       <IonIcon style={{height: '22px'}} color="dark" slot="icon-only" icon={checkboxOutline}></IonIcon>
                     </IonButton>
-                    <IonButton color={"dark"} onClick={() => {
+                    <IonButton color={"dark"} onClick={(e) => {
                       props.session.emitAsync('toggleOrder', props.session.cursor.row).then(() => {
                         props.session.emit('updateInner');
                       });
                     }}>
                       <OrderedListOutlined style={{fontSize: 22}} />
                     </IonButton>
-                    <IonButton onClick={() => {
+                    <IonButton onClick={(e) => {
                       props.session.emitAsync('toggleBoard', props.session.cursor.row).then(() => {
                         props.session.emit('updateInner');
                       });
                     }}>
                       <img className={'toolbar-img'} src={`images/board.png`}/>
                     </IonButton>
-                    <IonButton onClick={() => {
+                    <IonButton onClick={(e) => {
                       props.session.emitAsync('startTag', props.session.cursor.path).then(() => {
                         props.session.emit('updateInner');
                       });
                     }}>
                       <IonIcon style={{height: '22px'}} color="dark" slot="icon-only" icon={pricetagsOutline}></IonIcon>
                     </IonButton>
-                    <IonButton onClick={() => {
+                    <IonButton onClick={(e) => {
                       props.session.emitAsync('toggleCallout', props.session.cursor.row).then(() => {
                         props.session.emit('updateInner');
                       });
                     }}>
                       <img className={'toolbar-img'} src={`images/quote.png`}/>
                     </IonButton>
-                    <IonButton onClick={() => {
+                    <IonButton onClick={(e) => {
                       props.session.keyHandler?.queueKey('shift+tab');
                     }}>
                       <img className={'toolbar-img'} src={`images/left-indent.png`} />
                     </IonButton>
-                    <IonButton onClick={() => {
+                    <IonButton onClick={(e) => {
                       props.session.keyHandler?.queueKey('tab');
                     }}>
                       <img className={'toolbar-img'} src={`images/right-indent.png`} />
                     </IonButton>
-                    <IonButton onClick={() => {
+                    <IonButton onClick={(e) => {
                       props.session.keyHandler?.queueKey('virtual+down');
                     }}>
                       <img className={'toolbar-img'} src={`images/move-down.png`} />
                     </IonButton>
-                    <IonButton onClick={() => {
+                    <IonButton onClick={(e) => {
                       props.session.keyHandler?.queueKey('virtual+up');
                     }}>
                       <img className={'toolbar-img'} src={`images/move-up.png`} />
                     </IonButton>
-                    <IonButton onClick={() => {
+                    <IonButton onClick={(e) => {
                       props.session.keyHandler?.queueKey('meta+z');
                     }}>
                       <IonIcon style={{height: '22px'}} color="dark" slot="icon-only" icon={arrowUndoOutline}></IonIcon>
                     </IonButton>
-                    <IonButton onClick={() => {
+                    <IonButton onClick={(e) => {
                       props.session.keyHandler?.queueKey('meta+Z');
                     }}>
                       <IonIcon style={{height: '22px'}} color="dark" slot="icon-only" icon={arrowRedoOutline}></IonIcon>
