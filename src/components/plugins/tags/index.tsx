@@ -232,7 +232,7 @@ export class TagsPlugin {
             suffixIcon={<div/>}
             tagRender={tagRender}
             options={options}
-            autoFocus
+            autoFocus={pluginData.tags?.tagging}
             onFocus={() => this.session.stopKeyMonitor('tag-normal')}
             onDropdownVisibleChange={(open) => {
               if (!open) {
