@@ -242,7 +242,7 @@ function DocComponent(props: {session: Session, eventBus: EventEmitter<{[key: st
     refreshDocs();
     refreshToolbarElements();
     props.session.on('scrollTo', async (clickY) => {
-      await contentRef.current?.scrollByPoint(0, clickY - window.innerHeight/3, 100);
+      await contentRef.current?.scrollByPoint(0, clickY - window.innerHeight/2, 100);
       return Promise.resolve()
     });
     const gesture = createGesture({

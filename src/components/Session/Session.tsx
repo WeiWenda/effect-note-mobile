@@ -182,14 +182,15 @@ export default class SessionComponent extends React.Component<Props, State> {
               cols.push(j);
             }
             cursorNode.markCols(cols);
-          } else {
-            const [parent, index1, index2] = await session.getVisualLineSelections();
-            // 多行选中
-            const children = await session.document.getChildRange(parent, index1, index2);
-            children.forEach((child) => {
-              cursorsTree.getPath(child).markVisual();
-            });
           }
+          // else {
+          //   const [parent, index1, index2] = await session.getVisualLineSelections();
+          //   // 多行选中
+          //   const children = await session.document.getChildRange(parent, index1, index2);
+          //   children.forEach((child) => {
+          //     cursorsTree.getPath(child).markVisual();
+          //   });
+          // }
         }
       } else if (session.mode === 'VISUAL_LINE') {
         // mirrors logic of finishes_visual_line in keyHandler.js

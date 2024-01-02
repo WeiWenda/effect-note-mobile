@@ -1780,10 +1780,10 @@ export default class Session extends EventEmitter {
     const anchor = this._anchor;
     if (anchor !== null && !cursor.path.isRoot()) {
       if (!cursor.path.is(anchor.path) || this.selectInlinePath === null) {
-        // 多行选中
-        const [parent, index1, index2] = await this.getVisualLineSelections();
-        const children = await this.document.getChildren(parent);
-        await this.yankBlocks(children[index1], (index2 - index1) + 1);
+        // // 多行选中
+        // const [parent, index1, index2] = await this.getVisualLineSelections();
+        // const children = await this.document.getChildren(parent);
+        // await this.yankBlocks(children[index1], (index2 - index1) + 1);
       } else {
         // 单行选中
         const options = {includeEnd: false};
@@ -1805,13 +1805,14 @@ export default class Session extends EventEmitter {
         this.stopAnchor();
         this.selecting = false;
         this.emit('updateInner');
-      } else {
-        console.log('yankDelete multi line');
-        // 多行选中
-        const [parent, index1, index2] = await this.getVisualLineSelections();
-        await this.delBlocks(parent.row, index1, (index2 - index1) + 1, {addNew: false});
-        this.stopAnchor();
       }
+      // else {
+      //   console.log('yankDelete multi line');
+      //   // 多行选中
+      //   const [parent, index1, index2] = await this.getVisualLineSelections();
+      //   await this.delBlocks(parent.row, index1, (index2 - index1) + 1, {addNew: false});
+      //   this.stopAnchor();
+      // }
     } else {
       const lineInfo = await this.document.getInfo(this.cursor.row);
       if (this.cursor.col === 0 && lineInfo.pluginData.links?.is_check !== null) {
