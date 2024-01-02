@@ -573,11 +573,11 @@ function DocComponent(props: {session: Session, eventBus: EventEmitter<{[key: st
                              key='input-hack'
                              html={inputContent}
                              onChange={(e: any) => {
-                               const newVal = e.target.value;
-                               const newTextVal = e.target.textContent;
+                               const newVal = e.target.value.replace(/&lt;/g, '<')
+                                   .replace(/&gt;/g, '>').replace(/&amp;/g, '&').replace(/&nbsp;/g, ' ');
                                setInputContent(newVal);
-                               console.log('inputing', newTextVal);
-                               props.session.addCharsAtCursor(newTextVal.split('')).then(() => {
+                               console.log('inputing', newVal);
+                               props.session.addCharsAtCursor(newVal.split('')).then(() => {
                                  props.session.emit('updateInner');
                                  setInputContent('');
                                });

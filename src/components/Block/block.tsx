@@ -169,8 +169,26 @@ class RowComponent extends React.Component<RowProps, {showDragHint: boolean}> {
             session.setAnchor(path, -1);
           }
         }}
+        onTouchMove={(e) => {
+          if (session.getAnchor() !== null) {
+            if (e.changedTouches.length > 0) {
+              const touchEnd = e.changedTouches[e.changedTouches.length - 1];
+              const element = document.elementFromPoint(touchEnd.pageX, touchEnd.pageY);
+              if (element) {
+                sendTouchEvent(touchEnd.pageX, touchEnd.pageY, element, 'touchmove');
+              }
+            } else {
+              console.log(`onLineTouchMove set selectInlinePath ${path.row}`);
+              session.selecting = true;
+              session.selectInlinePath = path;
+              session.cursor.setPosition(path, -1).then(() => {
+                session.emit('updateInner');
+              });
+            }
+          }
+        }}
         onTouchEnd={(e) => {
-          if (session.selecting === false && session.getAnchor() !== null) {
+          if (session.getAnchor() !== null) {
             if (e.changedTouches.length > 0) {
               const touchEnd = e.changedTouches[e.changedTouches.length - 1];
               const element = document.elementFromPoint(touchEnd.pageX, touchEnd.pageY);

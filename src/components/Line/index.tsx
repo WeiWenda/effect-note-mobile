@@ -84,8 +84,6 @@ export default class LineComponent extends React.Component<LineProps, {input: st
     const DefaultTokenizer: Tokenizer = new Unfolder<Token, React.ReactNode>((
       token: Token, emit: EmitFn<React.ReactNode>
     ) => {
-      const firstIndexOfHighlight = token.info.findIndex(i => i.highlight);
-      const highlightNumber = token.info.filter(i => i.highlight).length;
       for (let i = 0; i < token.text.length; i++) {
         const char_info = token.info[i];
         const classes = Object.keys(char_info.renderOptions.classes);
@@ -123,86 +121,88 @@ export default class LineComponent extends React.Component<LineProps, {input: st
           }
         }
         let divType = char_info.renderOptions.divType || 'span';
-        if (i === firstIndexOfHighlight && !this.props.session.lockEdit) {
-          const element = React.createElement(
-            divType,
-            {
-              style: style,
-              key: `default-${column}`,
-              className: classes.join(' '),
-              onClick: onClick,
-              href: href,
-              target: target
-            } as React.DOMAttributes<any>,
-            token.text.slice(i, i + highlightNumber) as React.ReactNode
-          );
-          emit(element);
-          i = i + highlightNumber - 1;
-        } else {
-          emit(React.createElement(
-            divType,
-            {
-              style: style,
-              key: `default-${column}`,
-              className: classes.join(' '),
-              onClick: onClick,
-              onTouchStart: (e) => {
-                if (path) {
-                  console.log(`onTouchStart setAnchor ${path.row} ${column}`);
-                  session.selecting = false;
-                  session.setAnchor(path!, column);
-                  e.stopPropagation();
+
+        emit(React.createElement(
+          divType,
+          {
+            style: style,
+            key: `default-${column}`,
+            className: classes.join(' '),
+            onClick: onClick,
+            onTouchStart: (e) => {
+              if (path) {
+                console.log(`onTouchStart setAnchor ${path.row} ${column}`);
+                session.selecting = false;
+                session.setAnchor(path!, column);
+                e.stopPropagation();
+              }
+            },
+            onTouchMove: (e) => {
+              if (path) {
+                if (e.changedTouches.length > 0) {
+                  const touchEnd = e.changedTouches[e.changedTouches.length-1];
+                  const element = document.elementFromPoint(touchEnd.pageX, touchEnd.pageY);
+                  if (element) {
+                    sendTouchEvent(touchEnd.pageX, touchEnd.pageY, element, 'touchmove');
+                  }
+                } else {
+                  console.log(`onTouchMove set selectInlinePath ${path.row}`);
+                  session.selecting = true;
+                  session.selectInlinePath = path;
+                  session.cursor.setPosition(path, column).then(() => {
+                    session.emit('updateInner');
+                  });
                 }
-              },
-              // for debug
-              // onMouseUp: (e) => {
-              //   const element = document.elementFromPoint(e.pageX, e.pageY);
-              //   if (element) {
-              //     sendTouchEvent(e.pageX, e.pageY, element, 'touchend');
-              //   }
-              //   e.stopPropagation();
-              // },
-              onTouchEnd: (e) => {
-                if (path) {
-                  if (e.changedTouches.length > 0) {
-                    const touchEnd = e.changedTouches[e.changedTouches.length-1];
-                    const element = document.elementFromPoint(touchEnd.pageX, touchEnd.pageY);
-                    if (element) {
-                      sendTouchEvent(touchEnd.pageX, touchEnd.pageY, element, 'touchend');
-                    }
+              }
+              e.stopPropagation();
+            },
+            // for debug
+            // onMouseUp: (e) => {
+            //   const element = document.elementFromPoint(e.pageX, e.pageY);
+            //   if (element) {
+            //     sendTouchEvent(e.pageX, e.pageY, element, 'touchend');
+            //   }
+            //   e.stopPropagation();
+            // },
+            onTouchEnd: (e) => {
+              if (path) {
+                if (e.changedTouches.length > 0) {
+                  const touchEnd = e.changedTouches[e.changedTouches.length-1];
+                  const element = document.elementFromPoint(touchEnd.pageX, touchEnd.pageY);
+                  if (element) {
+                    sendTouchEvent(touchEnd.pageX, touchEnd.pageY, element, 'touchend');
+                  }
+                } else {
+                  console.log(`onTouchEnd ${path.row} ${column}`);
+                  if (session.anchor.col !== column) {
+                    console.log(`onColMouseUp set selectInlinePath ${path.row}`);
+                    session.selecting = true;
+                    session.selectInlinePath = path;
+                    session.cursor.setPosition(path, column).then(() => {
+                      session.emit('updateInner');
+                    });
                   } else {
-                    console.log(`onTouchEnd ${path.row} ${column}`);
-                    if (!session.selecting && session.anchor.col !== column) {
-                      console.log(`onColMouseUp set selectInlinePath ${path}`);
+                    console.log('onCharClick');
+                    if (e.shiftKey) {
+                      session.setAnchor(session.cursor.path, session.cursor.col);
                       session.selecting = true;
-                      session.selectInlinePath = path;
-                      session.cursor.setPosition(path, column).then(() => {
-                        session.emit('updateInner');
-                      });
-                    } else if (session.anchor.col === column) {
-                      console.log('onCharClick');
-                      if (e.shiftKey) {
-                        session.setAnchor(session.cursor.path, session.cursor.col);
-                        session.selecting = true;
-                      } else {
-                        session.stopAnchor();
-                      }
-                      session.cursor.setPosition(path, column).then(() => {
-                        session.emit('updateInner');
-                      });
+                    } else {
+                      session.stopAnchor();
                     }
+                    session.cursor.setPosition(path, column).then(() => {
+                      session.emit('updateInner');
+                    });
                   }
                 }
-                e.stopPropagation();
-              },
-              href: href,
-              target: target
-            } as React.DOMAttributes<any>,
-            token.text[i] as React.ReactNode
-          ));
-        }
+              }
+              e.stopPropagation();
+            },
+            href: href,
+            target: target
+          } as React.DOMAttributes<any>,
+          token.text[i] as React.ReactNode
+        ));
       }
-
     });
 
     let lineHook;
