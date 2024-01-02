@@ -550,7 +550,7 @@ function DocComponent(props: {session: Session, eventBus: EventEmitter<{[key: st
           </IonHeader>
           <IonContent ref={contentRef} fullscreen>
             {
-              toolBoxHeight >= 0 &&
+              toolBoxHeight > 0 &&
                 <div
                   onClick={(e) => {
                     const event = $.Event( "click" );

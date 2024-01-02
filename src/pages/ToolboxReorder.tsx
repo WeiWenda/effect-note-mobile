@@ -135,7 +135,7 @@ function ToolboxReorder(props: {eventBus: EventEmitter<{[key: string]: string}>}
     // The `from` and `to` properties contain the index of the item
     // when the drag started and ended, respectively
     console.log('Dragged from index', event.detail.from, 'to', event.detail.to);
-    const after = event.detail.complete(toolSeq);
+    const after: ToolBoxElement[] = event.detail.complete(toolSeq);
     setToolSeq(after);
     Preferences.set({
       key: 'toolbox_order',
