@@ -8,9 +8,9 @@ import {
   IonLabel, IonList,
   IonPage, IonSelect, IonSelectOption,
   IonTitle, IonToggle,
-  IonToolbar, useIonAlert, useIonLoading, IonItemGroup, IonItemDivider, IonText
+  IonToolbar, useIonAlert, useIonLoading, IonItemGroup, IonItemDivider, IonText, IonNavLink
 } from '@ionic/react';
-import {settingsOutline, trash, starSharp, scanOutline, arrowBackOutline} from "ionicons/icons";
+import {settingsOutline, trash, starSharp, scanOutline, arrowBackOutline, chevronForward} from "ionicons/icons";
 import { Preferences } from '@capacitor/preferences';
 import {useEffect, useState} from "react";
 import {EventEmitter} from "ahooks/lib/useEventEmitter";
@@ -22,6 +22,7 @@ import {
   BarcodeFormat,
   LensFacing,
 } from '@capacitor-mlkit/barcode-scanning';
+import ToolboxReorder from "./ToolboxReorder";
 
 function SettingComponent(props: {eventBus: EventEmitter<{[key: string]: string}>}) {
   const [theme, setTheme] = useState('auto');
@@ -226,6 +227,12 @@ function SettingComponent(props: {eventBus: EventEmitter<{[key: string]: string}
               });
             }}>开启自动同步</IonToggle>
           </IonItem>
+          <IonNavLink routerDirection="forward" component={() => <ToolboxReorder eventBus={props.eventBus} />}>
+            <IonItem>
+                <IonLabel>定制工具栏顺序</IonLabel>
+                  <IonIcon color={'medium'} icon={chevronForward}></IonIcon>
+            </IonItem>
+          </IonNavLink>
         </IonItemGroup>
       </IonContent>
     </IonPage>

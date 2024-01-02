@@ -2,7 +2,7 @@ import { Redirect, Route } from 'react-router-dom';
 import {
   IonApp,
   IonIcon,
-  IonLabel,
+  IonLabel, IonNav,
   IonRouterOutlet,
   IonTabBar,
   IonTabButton,
@@ -190,7 +190,7 @@ function App (props: {session: Session}) {
                   <DocComponent session={props.session} eventBus={eventEmitter} />
                 </Route>
                 <Route exact path="/settings">
-                  <SettingComponent eventBus={eventEmitter} />
+                  <IonNav root={() => <SettingComponent eventBus={eventEmitter} />}></IonNav>
                 </Route>
                 <Route exact path="/search">
                   <Redirect to="/docs" />

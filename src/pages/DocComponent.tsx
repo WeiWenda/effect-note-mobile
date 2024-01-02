@@ -46,6 +46,7 @@ import ContentEditable from "react-contenteditable";
 import {Keyboard} from "@capacitor/keyboard";
 import $ from "jquery";
 import {Clipboard} from "@capacitor/clipboard";
+import {defaultSeq} from "./ToolboxReorder";
 
 const { Search } = Input;
 
@@ -117,6 +118,7 @@ function DocComponent(props: {session: Session, eventBus: EventEmitter<{[key: st
   const [foldPopoverOpen, setFoldPopoverOpen] = useState(false);
   const [inputContent, setInputContent] = useState('');
   const [toolBoxHeight, setToolBoxHeight] = useState(0);
+  const [toolBoxElements, setToolBoxElements] = useState(defaultSeq);
   const onBack = () => {
     if (props.session.jumpIndex === 0) {
       setTimeout(() => {
@@ -184,6 +186,17 @@ function DocComponent(props: {session: Session, eventBus: EventEmitter<{[key: st
     }
   };
 
+  const refreshToolbarElements = () => {
+    Preferences.get({ key: 'toolbox_order'}).then((result) => {
+      if (result.value) {
+        const keys = JSON.parse(result.value) as string[];
+        const persistOrder = [...defaultSeq];
+        persistOrder.sort((a, b) => keys.indexOf(a.key) - keys.indexOf(b.key))
+        setToolBoxElements(persistOrder);
+      }
+    });
+  }
+
   const refreshDocs = () => {
     Preferences.get({ key: 'workspace' }).then(async (r) => {
       let remoteUpdated = false
@@ -227,6 +240,7 @@ function DocComponent(props: {session: Session, eventBus: EventEmitter<{[key: st
 
   useEffect(() => {
     refreshDocs();
+    refreshToolbarElements();
     props.session.on('scrollTo', async (clickY) => {
       await contentRef.current?.scrollByPoint(0, clickY - window.innerHeight/3, 100);
       return Promise.resolve()
@@ -245,6 +259,7 @@ function DocComponent(props: {session: Session, eventBus: EventEmitter<{[key: st
       console.log('keyboard will hide');
       setToolBoxHeight(0);
     });
+
     return () => {
       Keyboard.removeAllListeners();
     };
@@ -354,6 +369,73 @@ function DocComponent(props: {session: Session, eventBus: EventEmitter<{[key: st
     }
     return loop(docs);
   }, [docs, searchValue]);
+  const onToolBarClick = (key: string) => {
+    switch (key) {
+      case 'copy':
+        props.session.keyHandler?.queueKey('meta+c');
+        break;
+      case 'paste':
+        Clipboard.read().then(async ({type, value}) => {
+          const text = value.replace(/(?:\r)/g, '');  // Remove \r (Carriage Return) from each line
+          const mimetype = mimetypeLookupByContent(text);
+          if (!mimetype) {
+            if (props.session.getAnchor() !== null && props.session.selecting) {
+              await props.session.yankDelete();
+            }
+            await props.session.pasteText(text);
+          } else {
+            // session.showMessage(`识别到${mimetype}格式，导入中...`);
+            await props.session.importContent(text, mimetype, props.session.cursor.path);
+          }
+          await presentMessage({message: `粘贴成功`, duration: 300})
+          props.session.emit('updateInner');
+        });
+        break;
+      case 'mark-task':
+        props.session.emitAsync('toggleCheck', props.session.cursor.row).then(() => {
+          props.session.emit('updateInner');
+        });
+        break;
+      case 'mark-order':
+        props.session.emitAsync('toggleOrder', props.session.cursor.row).then(() => {
+          props.session.emit('updateInner');
+        });
+        break;
+      case 'mark-board':
+        props.session.emitAsync('toggleBoard', props.session.cursor.row).then(() => {
+          props.session.emit('updateInner');
+        });
+        break;
+      case 'mark-tag':
+        props.session.emitAsync('startTag', props.session.cursor.path).then(() => {
+          props.session.emit('updateInner');
+        });
+        break;
+      case 'mark-quote':
+        props.session.emitAsync('toggleCallout', props.session.cursor.row).then(() => {
+          props.session.emit('updateInner');
+        });
+        break;
+      case 'indent':
+        props.session.keyHandler?.queueKey('shift+tab');
+        break;
+      case 'unindent':
+        props.session.keyHandler?.queueKey('tab');
+        break;
+      case 'move-down':
+        props.session.keyHandler?.queueKey('virtual+down');
+        break;
+      case 'move-up':
+        props.session.keyHandler?.queueKey('virtual+up');
+        break;
+      case 'undo':
+        props.session.keyHandler?.queueKey('meta+z');
+        break;
+      case 'redo':
+        props.session.keyHandler?.queueKey('meta+Z');
+        break;
+    }
+  }
   props.eventBus.useSubscription(val => {
     if (val['action'] === 'start_search') {
       menuRef.current?.isOpen().then(menuOpen => {
@@ -372,6 +454,8 @@ function DocComponent(props: {session: Session, eventBus: EventEmitter<{[key: st
       onBack()
     } else if (val['action'] === 'persist_unsave') {
       persistUnSaveContent()
+    } else if (val['action'] === 'toolbar_order_change') {
+      refreshToolbarElements()
     }
   })
   return (
@@ -466,7 +550,7 @@ function DocComponent(props: {session: Session, eventBus: EventEmitter<{[key: st
           </IonHeader>
           <IonContent ref={contentRef} fullscreen>
             {
-              toolBoxHeight > 0 &&
+              toolBoxHeight >= 0 &&
                 <div
                   onClick={(e) => {
                     const event = $.Event( "click" );
@@ -476,95 +560,15 @@ function DocComponent(props: {session: Session, eventBus: EventEmitter<{[key: st
                   }}
                   style={{display: 'flex', zIndex: 1001, position: 'fixed', bottom: 0, height: '48px', width: '100%', overflowX: 'auto', ...getStyles(props.session.clientStore, ['theme-bg-secondary'])}}>
                   <IonButtons slot="start">
-                    <IonButton onClick={(e) => {
-                      props.session.keyHandler?.queueKey('meta+c');
-                    }}>
-                      <IonIcon style={{height: '22px'}} color="dark" slot="icon-only" icon={copyOutline}></IonIcon>
-                    </IonButton>
-                    <IonButton onClick={(e) => {
-                      Clipboard.read().then(async ({type, value}) => {
-                        const text = value.replace(/(?:\r)/g, '');  // Remove \r (Carriage Return) from each line
-                        const mimetype = mimetypeLookupByContent(text);
-                        if (!mimetype) {
-                          if (props.session.getAnchor() !== null && props.session.selecting) {
-                            await props.session.yankDelete();
-                          }
-                          await props.session.pasteText(text);
-                        } else {
-                          // session.showMessage(`识别到${mimetype}格式，导入中...`);
-                          await props.session.importContent(text, mimetype, props.session.cursor.path);
-                        }
-                        await presentMessage({message: `粘贴成功`, duration: 300})
-                        props.session.emit('updateInner');
-                      });
-                    }}>
-                      <IonIcon style={{height: '22px'}} color="dark" slot="icon-only" icon={clipboardOutline}></IonIcon>
-                    </IonButton>
-                    <IonButton onClick={(e) => {
-                      props.session.emitAsync('toggleCheck', props.session.cursor.row).then(() => {
-                        props.session.emit('updateInner');
-                      });
-                    }}>
-                      <IonIcon style={{height: '22px'}} color="dark" slot="icon-only" icon={checkboxOutline}></IonIcon>
-                    </IonButton>
-                    <IonButton color={"dark"} onClick={(e) => {
-                      props.session.emitAsync('toggleOrder', props.session.cursor.row).then(() => {
-                        props.session.emit('updateInner');
-                      });
-                    }}>
-                      <OrderedListOutlined style={{fontSize: 22}} />
-                    </IonButton>
-                    <IonButton onClick={(e) => {
-                      props.session.emitAsync('toggleBoard', props.session.cursor.row).then(() => {
-                        props.session.emit('updateInner');
-                      });
-                    }}>
-                      <img className={'toolbar-img'} src={`images/board.png`}/>
-                    </IonButton>
-                    <IonButton onClick={(e) => {
-                      props.session.emitAsync('startTag', props.session.cursor.path).then(() => {
-                        props.session.emit('updateInner');
-                      });
-                    }}>
-                      <IonIcon style={{height: '22px'}} color="dark" slot="icon-only" icon={pricetagsOutline}></IonIcon>
-                    </IonButton>
-                    <IonButton onClick={(e) => {
-                      props.session.emitAsync('toggleCallout', props.session.cursor.row).then(() => {
-                        props.session.emit('updateInner');
-                      });
-                    }}>
-                      <img className={'toolbar-img'} src={`images/quote.png`}/>
-                    </IonButton>
-                    <IonButton onClick={(e) => {
-                      props.session.keyHandler?.queueKey('shift+tab');
-                    }}>
-                      <img className={'toolbar-img'} src={`images/left-indent.png`} />
-                    </IonButton>
-                    <IonButton onClick={(e) => {
-                      props.session.keyHandler?.queueKey('tab');
-                    }}>
-                      <img className={'toolbar-img'} src={`images/right-indent.png`} />
-                    </IonButton>
-                    <IonButton onClick={(e) => {
-                      props.session.keyHandler?.queueKey('virtual+down');
-                    }}>
-                      <img className={'toolbar-img'} src={`images/move-down.png`} />
-                    </IonButton>
-                    <IonButton onClick={(e) => {
-                      props.session.keyHandler?.queueKey('virtual+up');
-                    }}>
-                      <img className={'toolbar-img'} src={`images/move-up.png`} />
-                    </IonButton>
-                    <IonButton onClick={(e) => {
-                      props.session.keyHandler?.queueKey('meta+z');
-                    }}>
-                      <IonIcon style={{height: '22px'}} color="dark" slot="icon-only" icon={arrowUndoOutline}></IonIcon>
-                    </IonButton>
-                    <IonButton onClick={(e) => {
-                      props.session.keyHandler?.queueKey('meta+Z');
-                    }}>
-                      <IonIcon style={{height: '22px'}} color="dark" slot="icon-only" icon={arrowRedoOutline}></IonIcon>
-                    </IonButton>
+                    {
+                      toolBoxElements.map(toolBoxElement => {
+                        return (
+                          <IonButton key={toolBoxElement.key} onClick={(e) => {onToolBarClick(toolBoxElement.key)}}>
+                            {toolBoxElement.icon}
+                          </IonButton>
+                        )
+                      })
+                    }
                   </IonButtons>
                 </div>
             }

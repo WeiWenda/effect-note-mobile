@@ -95,6 +95,10 @@ body.dark ion-button img {
   filter: invert(1) drop-shadow(0 0 0 #ffffff) saturate(1000%)
 }
 
+body.dark ion-item img {
+  filter: invert(1) drop-shadow(0 0 0 #ffffff) saturate(1000%)
+}
+
 body.dark {
   --ion-color-primary: #428cff;
   --ion-color-primary-rgb: 66, 140, 255;
