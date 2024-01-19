@@ -145,20 +145,8 @@ export class LinksPlugin {
             const code = await this.getCode(row);
             const dataloom = await this.getDataLoom(row);
             const rtf = await this.getRTF(row);
-            obj.links = { is_callout, is_order, is_board, is_check, collapse, png, xml, md, code, rtf, dataloom};
+            obj.links = { is_callout, is_order, is_board, is_check, collapse, png, drawio: xml, md, code, rtf, dataloom};
             return obj;
-        });
-        this.api.registerHook('session', 'renderLineTokenHook', (tokenizer, {pluginData}) => {
-            if (pluginData.links?.code || pluginData.links?.xml ||
-                pluginData.links?.md || pluginData.links?.rtf || pluginData.links?.dataloom) {
-                return tokenizer.then(new PartialUnfolder<Token, React.ReactNode>((
-                    _token: Token, _emit: EmitFn<React.ReactNode>, _wrapped: Tokenizer
-                ) => {
-                    // do nothing
-                }));
-            } else {
-                return tokenizer;
-            }
         });
         this.api.registerHook('document', 'serializeRow', async (struct, info) => {
             const collapse = await this.getCollapse(info.row);
@@ -243,7 +231,13 @@ export class LinksPlugin {
                 await this._setPng(path.row, serialized.png.src, serialized.png.json);
             }
             if (serialized.drawio) {
-                await this._setXml(path.row, serialized.drawio);
+                if (serialized.drawio.xml) {
+                    await this._setXml(path.row, serialized.drawio.xml);
+                    await this._setXmlZoom(path.row, serialized.drawio.zoom);
+                } else {
+                    // 兼容老数据
+                    await this._setXml(path.row, serialized.drawio);
+                }
             }
             if (serialized.md) {
                 await this._setMarkdown(path.row, serialized.md);
@@ -291,9 +285,11 @@ export class LinksPlugin {
             return lineContents;
         });
         this.api.registerHook('session', 'renderAfterLine', (elements, {path, line, pluginData}) => {
-            if (pluginData.links?.xml != null) {
+            if (pluginData.links?.drawio != null) {
                 elements.push(
-                    <DrawioViewer key={'drawio'} session={that.session} row={path.row} content={pluginData.links.xml}/>
+                    <DrawioViewer key={'drawio'} session={that.session} row={path.row}
+                                  content={pluginData.links.drawio.xml}
+                                  zoom={pluginData.links.drawio.zoom}/>
                 );
             }
             if (pluginData.links?.png != null) {
@@ -445,7 +441,7 @@ export class LinksPlugin {
         const ids_to_xmls = await this.api.getData('ids_to_xmls', {});
         if (ids_to_xmls[row]) {
             const xml = await this.api.getData(row + ':xml', '');
-            return xml;
+            return {xml, zoom: ids_to_xmls[row]};
         } else {
             return null;
         }
@@ -460,7 +456,16 @@ export class LinksPlugin {
         await this.api.setData(row + ':xml', xml);
         // 不存在的key查询效率较差
         const ids_to_xmls = await this.api.getData('ids_to_xmls', {});
-        ids_to_xmls[row] = 1;
+        if (!ids_to_xmls[row]) {
+            ids_to_xmls[row] = 1;
+        }
+        await this.api.setData('ids_to_xmls', ids_to_xmls);
+    }
+
+    private async _setXmlZoom(row: Row, zoom: number): Promise<void> {
+        // 不存在的key查询效率较差
+        const ids_to_xmls = await this.api.getData('ids_to_xmls', {});
+        ids_to_xmls[row] = zoom;
         await this.api.setData('ids_to_xmls', ids_to_xmls);
     }
 

@@ -4,6 +4,7 @@ import Row from "../ts/path";
 
 type DrawioViewerProps = {
   content: string;
+  zoom: number;
   session: Session;
   row: Row;
 };
@@ -12,21 +13,6 @@ export class DrawioViewer extends React.Component<DrawioViewerProps, {zoom: numb
 
   constructor(props: DrawioViewerProps) {
     super(props);
-    this.state ={
-      zoom: 1
-    }
-  }
-
-  zoomIn() {
-    this.setState({
-      zoom: this.state.zoom + 0.3
-    })
-  }
-
-  zoomOut() {
-    this.setState({
-      zoom: this.state.zoom - 0.3
-    })
   }
 
   render() {
@@ -36,7 +22,7 @@ export class DrawioViewer extends React.Component<DrawioViewerProps, {zoom: numb
       highlight: this.props.session.clientStore.getClientSetting('theme-bg-highlight'),
       lightbox: false,
       edit: '_blank',
-      zoom: this.state.zoom,
+      zoom: this.props.zoom,
       nav: true,
       xml: this.props.content,
     })
