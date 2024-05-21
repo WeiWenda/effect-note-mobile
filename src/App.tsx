@@ -84,7 +84,7 @@ function App (props: {session: Session}) {
     const mappings = config.defaultMappings;
     const keyBindings = new KeyBindings(keyDefinitions, mappings);
     const pluginManager = new PluginsManager(props.session, config, keyBindings);
-    let enabledPlugins = ['Marks', 'Tags', 'Links', 'HTML', 'Todo', 'Markdown', 'CodeSnippet', 'LaTeX', 'DataLoom'];
+    let enabledPlugins = ['Marks', 'Tags', 'Links', 'HTML', 'Todo', 'Markdown', 'CodeSnippet', 'LaTeX', 'Comment', 'DataLoom', 'MindMap'];
     enabledPlugins.reduce((p: Promise<void>, plugin_name) =>
         p.then(() => pluginManager.enable(plugin_name)), Promise.resolve()).then(() => {
           setLoading(false);
@@ -190,7 +190,7 @@ function App (props: {session: Session}) {
                   <DocComponent session={props.session} eventBus={eventEmitter} />
                 </Route>
                 <Route exact path="/settings">
-                  <IonNav root={() => <SettingComponent eventBus={eventEmitter} />}></IonNav>
+                  <IonNav root={() => <SettingComponent session={props.session} eventBus={eventEmitter} />}></IonNav>
                 </Route>
                 <Route exact path="/search">
                   <Redirect to="/docs" />
@@ -254,7 +254,10 @@ function App (props: {session: Session}) {
                     <IonLabel>Edit</IonLabel>
                   </IonTabButton>
                 }
-                <IonTabButton tab="tab4" href="/docs">
+                <IonTabButton tab="tab4" href="/docs" onClick={(e) => {
+                  e.stopPropagation();
+                  props.session.setMode('NORMAL');
+                }}>
                   <IonIcon aria-hidden="true" icon={fileTrayFullOutline} />
                   <IonLabel>Home</IonLabel>
                 </IonTabButton>

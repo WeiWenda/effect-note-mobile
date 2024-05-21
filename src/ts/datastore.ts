@@ -197,7 +197,7 @@ type DocSetting = keyof DocSettings;
 
 const default_doc_settings: DocSettings = {
   // TODO import these names from the plugins
-  enabledPlugins: ['Marks', 'Tags', 'Links', 'HTML', 'Todo', 'Markdown', 'CodeSnippet', 'LaTeX'],
+  enabledPlugins: ['Marks', 'Tags', 'Links', 'HTML', 'Todo', 'Markdown', 'CodeSnippet', 'LaTeX', 'Comment'],
 };
 
 const timeout = (ns: number) => {

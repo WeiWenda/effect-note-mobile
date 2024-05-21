@@ -2,8 +2,7 @@ import * as React from 'react'; // tslint:disable-line no-unused-variable
 import {PluginApi, registerPlugin} from '../../../ts/plugins';
 import {Document, EmitFn, Mutation, PartialUnfolder, Row, Session, Token, Tokenizer} from '../../../ts';
 import {Dropdown, Image, Menu, MenuProps, message, Modal, Popover, Space, Tag } from 'antd';
-import {EditOutlined, ExclamationCircleOutlined, PictureOutlined, ZoomInOutlined,
-    ZoomOutOutlined, CheckSquareOutlined, BorderOutlined, ArrowRightOutlined, ArrowLeftOutlined} from '@ant-design/icons';
+import {LinkOutlined, CheckSquareOutlined, BorderOutlined, ArrowRightOutlined, ArrowLeftOutlined} from '@ant-design/icons';
 import {Logger} from '../../../ts/logger';
 import {getStyles} from '../../../ts/themes';
 import {pluginName as tagsPluginName, TagsPlugin} from '../tags';
@@ -56,7 +55,7 @@ export class LinksPlugin {
         const onCheckChange = (tags: string[], prefix: string, row: number) => {
             const dateString = Moment().format('yyyy-MM-DD HH:mm:ss');
             let filteredTags = tags?.filter(t => !t.startsWith(prefix))
-                .filter(t => !['Delay', 'Done', 'Todo', 'Doing'].includes(t)) || [];
+              .filter(t => !['Delay', 'Done', 'Todo', 'Doing'].includes(t)) || [];
             filteredTags = [prefix + dateString,  ...filteredTags];
             const newStatus = getTaskStatus(filteredTags);
             if (newStatus) {
@@ -65,8 +64,8 @@ export class LinksPlugin {
             return this.tagsPlugin.setTags(row, filteredTags);
         };
         const onInsertDrawio = (row: Row) => {
-            that.getXml(row).then(xml => {
-                that.session.emit('openModal', 'drawio', {xml: xml});
+            that.getXml(row).then(drawio => {
+                that.session.emit('openModal', 'drawio', {xml: drawio ? drawio.xml : undefined});
             });
             that.session.drawioOnSave = (xml: string) => {
                 that.setXml(row, xml).then(() => {
@@ -75,10 +74,13 @@ export class LinksPlugin {
             };
         };
         this.api.registerListener('session', 'setBlockCollapse', async (row: Row, collapse: boolean) => {
-            await this.setBlockCollapse(row, collapse);
+           await this.setBlockCollapse(row, collapse);
         });
         this.api.registerListener('session', 'clearPluginStatus', async () => {
             await this.clearLinks();
+        });
+        this.api.registerListener('session', 'setBoardWidth', async (row: Row, width: number) => {
+            await this.setWidth(row, width);
         });
         this.api.registerListener('session', 'setMindmap', async (row: Row, img_src: string, img_json: string) => {
             await this.setPng(row, img_src, img_json);
@@ -94,6 +96,9 @@ export class LinksPlugin {
         });
         this.api.registerListener('session', 'setRTF', async (row: Row, html: string) => {
             await this.setRTF(row, html);
+        });
+        this.api.registerListener('session', 'setSoftLink', async (row: Row, targetRow: Row) => {
+            await this.setSoftLink(row, targetRow);
         });
         this.api.registerListener('session', 'setMarkdown', async (row: Row, markdown: string) => {
             await this.setMarkdown(row, markdown);
@@ -132,11 +137,30 @@ export class LinksPlugin {
                 await this.unsetIsCheck(row);
             }
         });
+        this.api.registerHook('session', 'renderBullet', function(bullet, {path, rowInfo}) {
+            if (rowInfo.pluginData?.links?.soft_link) {
+                return (
+                  <LinkOutlined className={'bullet'}
+                                onClick={() => {
+                                    that.session.document.canonicalPath(rowInfo.pluginData.links.soft_link).then((targetPath) => {
+                                        if (targetPath) {
+                                            that.session.zoomInto(targetPath).then(() => {
+                                                that.session.emit('updateInner');
+                                            });
+                                        }
+                                    });
+                                }}/>
+                );
+            } else {
+                return bullet;
+            }
+        });
         this.api.registerHook('document', 'pluginRowContents', async (obj, { row }) => {
             const is_board = await this.getIsBoard(row);
             const is_callout = await this.getIsCallout(row);
             const is_order = await this.getIsOrder(row);
             const is_check = await this.getIsCheck(row);
+            const soft_link = await this.getSoftLink(row);
             const collapse = await this.getCollapse(row);
             const ids_to_pngs = await this.api.getData('ids_to_pngs', {});
             const png = ids_to_pngs[row] || null;
@@ -145,7 +169,9 @@ export class LinksPlugin {
             const code = await this.getCode(row);
             const dataloom = await this.getDataLoom(row);
             const rtf = await this.getRTF(row);
-            obj.links = { is_callout, is_order, is_board, is_check, collapse, png, drawio: xml, md, code, rtf, dataloom};
+            const width = await this.getWidth(row);
+            obj.links = { is_callout, is_order, is_board, is_check, soft_link, collapse, png, drawio: xml, md, code, rtf, dataloom, width,
+                is_special: code || xml ||  png || md || rtf || dataloom};
             return obj;
         });
         this.api.registerHook('document', 'serializeRow', async (struct, info) => {
@@ -168,6 +194,10 @@ export class LinksPlugin {
             const isCheck = await this.getIsCheck(info.row);
             if (isCheck !== null) {
                 struct.is_check = isCheck;
+            }
+            const softLink = await this.getSoftLink(info.row);
+            if (softLink !== null) {
+                struct.soft_link = softLink;
             }
             const ids_to_pngs = await this.api.getData('ids_to_pngs', {});
             if (ids_to_pngs[info.row] != null) {
@@ -193,6 +223,10 @@ export class LinksPlugin {
             if (dataloom != null) {
                 struct.dataloom = dataloom;
             }
+            const width = await this.getWidth(info.row);
+            if (width != null) {
+                struct.width = width;
+            }
             return struct;
         });
         this.api.registerListener('document', 'loadRow', async (path, serialized) => {
@@ -202,11 +236,17 @@ export class LinksPlugin {
             if (serialized.is_board) {
                 await this._setIsBoard(path.row, true);
             }
+            if (serialized.width) {
+                await this._setWidth(path.row, serialized.width);
+            }
             if (serialized.is_callout) {
                 await this._setIsCallout(path.row, true);
             }
             if (serialized.is_order) {
                 await this._setIsOrder(path.row, true);
+            }
+            if (serialized.soft_link) {
+                await this._setSoftLink(path.row, serialized.soft_link);
             }
             if (serialized.is_check !== undefined) {
                 await this._setIsCheck(path.row, serialized.is_check);
@@ -292,31 +332,6 @@ export class LinksPlugin {
                                   zoom={pluginData.links.drawio.zoom}/>
                 );
             }
-            if (pluginData.links?.png != null) {
-                elements.push(
-                    <Tag key={'mindmap-icon'} icon={<PictureOutlined />}
-                         onClick={() => pluginData.links.png.visible = true}
-                         style={{
-                             marginLeft: '5px',
-                             ...getStyles(this.session.clientStore, ['theme-bg-secondary', 'theme-trim', 'theme-text-primary'])
-                         }} >
-                        脑图
-                    </Tag>,
-                    <Image
-                        key='mindmap-preview'
-                        style={{ display: 'none' }}
-                        src={pluginData.links.png.src}
-                        preview={{
-                            visible: pluginData.links.png.visible,
-                            src: pluginData.links.png.src,
-                            onVisibleChange: value => {
-                                pluginData.links.png.visible = value;
-                                that.session.emit('updateInner');
-                            }
-                        }}
-                    />
-                );
-            }
             return elements;
         });
     }
@@ -327,7 +342,7 @@ export class LinksPlugin {
     }
 
     public async clearLinks() {
-        await this.api.setData('ids_to_links', {});
+        await this.api.setData('ids_to_softlink', {});
         await this.api.setData('ids_to_pngs', {});
         await this.api.setData('ids_to_xmls', {});
         await this.api.setData('ids_to_mds', {});
@@ -339,6 +354,7 @@ export class LinksPlugin {
         await this.api.setData('ids_to_check', {});
         await this.api.setData('ids_to_callout', {});
         await this.api.setData('ids_to_datalooms', {});
+        await this.api.setData('ids_to_width', {});
     }
 
     public async getPng(row: Row): Promise<any> {
@@ -405,6 +421,11 @@ export class LinksPlugin {
         await this.api.updatedDataForRender(row);
     }
 
+    public async setSoftLink(row: Row, targetRow: Row): Promise<void> {
+        await this._setSoftLink(row, targetRow);
+        await this.api.updatedDataForRender(row);
+    }
+
     private async _setCode(row: Row, content: string, language: string, wrap: boolean): Promise<void> {
         await this.api.setData(row + ':code', {content, language, wrap});
         // 不存在的key查询效率较差
@@ -447,6 +468,11 @@ export class LinksPlugin {
         }
     }
 
+    public async setXmlZoom(row: Row, zoom: number): Promise<void> {
+        await this._setXmlZoom(row, zoom);
+        await this.api.updatedDataForRender(row);
+    }
+
     public async setXml(row: Row, xml: String): Promise<void> {
         await this._setXml(row, xml);
         await this.api.updatedDataForRender(row);
@@ -480,13 +506,6 @@ export class LinksPlugin {
         await this.api.setData('ids_to_pngs', ids_to_pngs);
     }
 
-    public async unsetPng(row: Row) {
-        const ids_to_pngs = await this.api.getData('ids_to_pngs', {});
-        delete ids_to_pngs[row];
-        await this.api.setData('ids_to_pngs', ids_to_pngs);
-        await this.api.updatedDataForRender(row);
-    }
-
     public async getCollapse(row: Row): Promise<boolean | null> {
         const ids_to_collapses = await this.api.getData('ids_to_collapses', {});
         return ids_to_collapses[row] || null;
@@ -498,9 +517,29 @@ export class LinksPlugin {
         await this.api.setData('ids_to_collapses', ids_to_collapses);
     }
 
+    public async getWidth(row: Row): Promise<number | null> {
+        const ids_to_width = await this.api.getData('ids_to_width', {});
+        return ids_to_width[row] !== undefined ? ids_to_width[row] : null;
+    }
+
+    public async setWidth(row: Row, width: number): Promise<void> {
+        await this._setWidth(row, width);
+        await this.api.updatedDataForRender(row);
+    }
+
+    private async _setWidth(row: Row, width: number) {
+        const ids_to_width = await this.api.getData('ids_to_width', {});
+        ids_to_width[row] = width;
+        await this.api.setData('ids_to_width', ids_to_width);
+    }
+
     public async getIsCheck(row: Row): Promise<boolean | null> {
         const ids_to_check = await this.api.getData('ids_to_check', {});
         return ids_to_check[row] !== undefined ? ids_to_check[row] : null;
+    }
+    public async getSoftLink(row: Row): Promise<Row | null> {
+        const ids_to_softlink = await this.api.getData('ids_to_softlink', {});
+        return ids_to_softlink[row] !== undefined ? ids_to_softlink[row] : null;
     }
     public async setIsCheck(row: Row, is_board: boolean) {
         await this._setIsCheck(row, is_board);
@@ -517,6 +556,12 @@ export class LinksPlugin {
         const ids_to_check = await this.api.getData('ids_to_check', {});
         ids_to_check[row] = mark;
         await this.api.setData('ids_to_check', ids_to_check);
+    }
+
+    private async _setSoftLink(row: Row, targetRow: Row) {
+        const ids_to_softlink = await this.api.getData('ids_to_softlink', {});
+        ids_to_softlink[row] = targetRow;
+        await this.api.setData('ids_to_softlink', ids_to_softlink);
     }
 
     public async getIsBoard(row: Row): Promise<boolean | null> {

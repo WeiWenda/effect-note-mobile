@@ -23,8 +23,10 @@ import {
   LensFacing,
 } from '@capacitor-mlkit/barcode-scanning';
 import ToolboxReorder from "./ToolboxReorder";
+import PictureShareFooter from "./PictureShareFooter";
+import {Session} from "../ts";
 
-function SettingComponent(props: {eventBus: EventEmitter<{[key: string]: string}>}) {
+function SettingComponent(props: {session: Session, eventBus: EventEmitter<{[key: string]: string}>}) {
   const [theme, setTheme] = useState('auto');
   const [scaning, setScaning] = useState(false);
   const [autoUpdate, setAutoUpdate] = useState(true);
@@ -227,6 +229,14 @@ function SettingComponent(props: {eventBus: EventEmitter<{[key: string]: string}
               });
             }}>开启自动同步</IonToggle>
           </IonItem>
+          <IonNavLink routerDirection="forward" component={() => <PictureShareFooter
+              session={props.session}
+              eventBus={props.eventBus} />}>
+            <IonItem>
+              <IonLabel>定制分享页脚</IonLabel>
+              <IonIcon color={'medium'} icon={chevronForward}></IonIcon>
+            </IonItem>
+          </IonNavLink>
           <IonNavLink routerDirection="forward" component={() => <ToolboxReorder eventBus={props.eventBus} />}>
             <IonItem>
                 <IonLabel>定制工具栏顺序</IonLabel>

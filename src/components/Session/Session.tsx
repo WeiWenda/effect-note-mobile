@@ -52,10 +52,10 @@ export default class SessionComponent extends React.Component<Props, State> {
       await this.update();
     });
 
-    this.props.session.on('updateInner',  () => {
+    this.props.session.on('updateInner',  async () => {
       logger.debug('updateInner');
       this.props.session.emit('changeComment');
-      this.update();
+      await this.update();
     });
 
     // @ts-ignore
@@ -290,7 +290,6 @@ export default class SessionComponent extends React.Component<Props, State> {
     // TODO: have an extra breadcrumb indicator when not at viewRoot?
     return (
       <div className='session-content'
-           style={{paddingBottom: window.innerHeight / 2}}
            onMouseLeave={() => {
              this.props.session.setHoverRow(null);
            }}

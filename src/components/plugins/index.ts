@@ -7,6 +7,8 @@ import './links';
 import './markdown';
 import './code';
 import './dataloom';
+import './comment';
+import './mindmap';
 
 // for developers: uncomment the following lines
 /*

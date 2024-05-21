@@ -18,15 +18,12 @@ import {
   IonToolbar,
   useIonLoading,
   useIonToast,
-  useIonAlert
+  useIonAlert, IonFab, IonFabButton, IonFabList
 } from '@ionic/react';
 import {
-  arrowRedoOutline,
-  arrowUndoOutline,
-  checkboxOutline, clipboardOutline,
-  copyOutline,
-  filterOutline,
-  pricetagsOutline
+  ellipsisVertical,
+  chevronCollapseOutline,
+  shareSocialOutline
 } from "ionicons/icons";
 import {menuController} from '@ionic/core/components';
 import React, {useEffect, useMemo, useRef, useState} from "react";
@@ -47,6 +44,11 @@ import {Keyboard} from "@capacitor/keyboard";
 import $ from "jquery";
 import {Clipboard} from "@capacitor/clipboard";
 import {defaultSeq} from "./ToolboxReorder";
+import { toPng } from 'html-to-image';
+import Moment from 'moment/moment';
+import {Directory, Filesystem} from "@capacitor/filesystem";
+import {Share} from "@capacitor/share";
+import {defaultPreference} from "./PictureShareFooter";
 
 const { Search } = Input;
 
@@ -109,6 +111,7 @@ function DocComponent(props: {session: Session, eventBus: EventEmitter<{[key: st
   const [searchValue, setSearchValue] = useState('');
   const [contentSearchValue, setContentSearchValue] = useState('');
   const [searching, setSearching] = useState(false);
+  const [screenShot, setScreenShot] = useState(false);
   const [docs, setDocs] = useState<Array<DocInfo>>([]);
   const [menuItem2DocId, setMenuItem2DocId] = useState(new Array<DocInfo>());
   const [present, dismiss] = useIonLoading();
@@ -119,6 +122,7 @@ function DocComponent(props: {session: Session, eventBus: EventEmitter<{[key: st
   const [inputContent, setInputContent] = useState('');
   const [toolBoxHeight, setToolBoxHeight] = useState(0);
   const [toolBoxElements, setToolBoxElements] = useState(defaultSeq);
+  const [sharePreference, setSharePreference] = useState(defaultPreference);
   const onBack = () => {
     if (props.session.jumpIndex === 0) {
       setTimeout(() => {
@@ -193,6 +197,14 @@ function DocComponent(props: {session: Session, eventBus: EventEmitter<{[key: st
         const persistOrder = [...defaultSeq];
         persistOrder.sort((a, b) => keys.indexOf(a.key) - keys.indexOf(b.key))
         setToolBoxElements(persistOrder);
+      }
+    });
+  }
+
+  const refreshShareFooterPrefer = () => {
+    Preferences.get({ key: 'share_footer'}).then((result) => {
+      if (result.value) {
+        setSharePreference(JSON.parse(result.value));
       }
     });
   }
@@ -456,6 +468,8 @@ function DocComponent(props: {session: Session, eventBus: EventEmitter<{[key: st
       persistUnSaveContent()
     } else if (val['action'] === 'toolbar_order_change') {
       refreshToolbarElements()
+    } else if (val['action'] === 'share_footer_change') {
+      refreshShareFooterPrefer()
     }
   })
   return (
@@ -519,35 +533,64 @@ function DocComponent(props: {session: Session, eventBus: EventEmitter<{[key: st
                                 props.session.applySearch(e.detail.value ?? '');
                               }}></IonSearchbar>
               }
-              <IonButtons slot="end">
-                  <IonButton onClick={(e) => {
-                    foldPopover.current!.event = e;
-                    setFoldPopoverOpen(true);
-                    e.stopPropagation();
-                  }}>
-                    <IonIcon slot="icon-only" icon={filterOutline}/>
-                  </IonButton>
-                  <IonPopover ref={foldPopover} isOpen={foldPopoverOpen} onDidDismiss={() => setFoldPopoverOpen(false)}>
-                    <IonContent>
-                      <IonList>
-                        {unfoldMenus.map(({key, label}, i) => (
-                            <IonItem key={key} onClick={(e) => {
-                              e.stopPropagation();
-                              const expandLevel = Number(key.substring(1));
-                              props.session.foldBlock(props.session.viewRoot, expandLevel, false).then(() => {
-                                props.session.emit('updateInner');
-                                setFoldPopoverOpen(false);
-                              });
-                            }}>
-                              <IonLabel>{label}</IonLabel>
-                            </IonItem>
-                        ))}
-                      </IonList>
-                    </IonContent>
-                  </IonPopover>
-              </IonButtons>
             </IonToolbar>
           </IonHeader>
+          <IonFab slot={'fixed'} horizontal="end" edge={true}>
+            <IonFabButton>
+              <IonIcon icon={ellipsisVertical}/>
+            </IonFabButton>
+            <IonFabList side="bottom">
+              <IonFabButton color={'primary'} onClick={(e) => {
+                foldPopover.current!.event = e;
+                setFoldPopoverOpen(true);
+              }}>
+                <IonIcon icon={chevronCollapseOutline}/>
+              </IonFabButton>
+              <IonFabButton color={'primary'} onClick={(e) => {
+                const sessionDiv = $('.screen-shot-area').get()
+                if (sessionDiv) {
+                  $('.screen-shot-area').addClass('screen-shot')
+                  setScreenShot(true);
+                  present({message: '正在生成图片...', backdropDismiss: false}).then(() => {
+                    toPng(sessionDiv[0]).then(dataUrl => {
+                      Filesystem.writeFile({
+                        path: 'share-cache.png',
+                        data: dataUrl.split(',')[1],
+                        directory: Directory.Documents
+                      }).then((result) => {
+                        $('.screen-shot-area').removeClass('screen-shot')
+                        dismiss().then(() => {
+                          Share.share({
+                            url: result.uri,
+                          });
+                        });
+                      });
+                    })
+                  })
+                }
+              }}>
+                <IonIcon icon={shareSocialOutline}/>
+              </IonFabButton>
+            </IonFabList>
+            <IonPopover ref={foldPopover} reference={'event'} isOpen={foldPopoverOpen} onDidDismiss={() => setFoldPopoverOpen(false)}>
+              <IonContent>
+                <IonList>
+                  {unfoldMenus.map(({key, label}, i) => (
+                    <IonItem key={key} onClick={(e) => {
+                      e.stopPropagation();
+                      const expandLevel = Number(key.substring(1));
+                      props.session.foldBlock(props.session.viewRoot, expandLevel, false).then(() => {
+                        props.session.emit('updateInner');
+                        setFoldPopoverOpen(false);
+                      });
+                    }}>
+                      <IonLabel>{label}</IonLabel>
+                    </IonItem>
+                  ))}
+                </IonList>
+              </IonContent>
+            </IonPopover>
+          </IonFab>
           <IonContent ref={contentRef} fullscreen>
             {
               toolBoxHeight > 0 &&
@@ -589,7 +632,17 @@ function DocComponent(props: {session: Session, eventBus: EventEmitter<{[key: st
                                //   console.log('inputing', newVal);
                                // }
                              }}></ContentEditable>
-            <SessionComponent session={props.session} />
+            <div className={'screen-shot-area'}>
+              <SessionComponent session={props.session} />
+              {
+                screenShot && (sharePreference.show_date || sharePreference.show_software || sharePreference.show_user_info) &&
+                <div style={{fontFamily: 'sans-serif', fontStyle: 'italic',
+                  textAlign: 'right', paddingRight: '10px', paddingBottom: '10px'}}>Written{
+                  sharePreference.show_user_info ? ` By ${sharePreference.user_info}` : ''}{
+                   sharePreference.show_software ? ' With EffectNote' : ''}{
+                    sharePreference.show_date ? ` At ${Moment().format('yyyy/MM/DD')}` : ''}</div>
+              }
+            </div>
           </IonContent>
         </IonPage>
       </>

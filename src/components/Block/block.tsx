@@ -46,13 +46,7 @@ class RowComponent extends React.Component<RowProps, {showDragHint: boolean}> {
         if (!props.onClick) {
           throw new Error('onClick disappeared');
         }
-        if (props.cached.pluginData.links?.md || props.cached.pluginData.links?.xml ||
-          props.cached.pluginData.links?.code ||
-          props.cached.line.join('').startsWith('<div class=\'node-html\'>')) {
-          return;
-        } else {
-          props.onClick(props.path);
-        }
+        props.onClick(props.path);
       };
     }
 
@@ -151,17 +145,11 @@ class RowComponent extends React.Component<RowProps, {showDragHint: boolean}> {
 
     return (
       <div key='text' className='node-text'
-           onClick={this.onClick}
-           onMouseEnter={() => {
-             this.props.session.setHoverRow(path);
-             if (this.props.session.dragging) {
-               this.setState({showDragHint: true});
-             }
-           }}
-           onMouseLeave={() => {
-             this.setState({showDragHint: false});
+           onClick={() => {
+             if (this.onClick) {this.onClick(); }
            }}
         onTouchStart={(e) => {
+          if (this.props.cached.pluginData?.links.is_special) return;
           if (!this.props.session.selectPopoverOpen) {
             // 颜色面板在其他block上层
             console.log('onLineTouchStart');
@@ -170,6 +158,7 @@ class RowComponent extends React.Component<RowProps, {showDragHint: boolean}> {
           }
         }}
         onTouchMove={(e) => {
+          if (this.props.cached.pluginData?.links.is_special) return;
           if (session.getAnchor() !== null) {
             if (e.changedTouches.length > 0) {
               const touchEnd = e.changedTouches[e.changedTouches.length - 1];
@@ -188,6 +177,7 @@ class RowComponent extends React.Component<RowProps, {showDragHint: boolean}> {
           }
         }}
         onTouchEnd={(e) => {
+          if (this.props.cached.pluginData?.links.is_special) return;
           if (session.getAnchor() !== null) {
             if (e.changedTouches.length > 0) {
               const touchEnd = e.changedTouches[e.changedTouches.length - 1];
