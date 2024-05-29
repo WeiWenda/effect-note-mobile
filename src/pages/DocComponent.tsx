@@ -117,8 +117,6 @@ function DocComponent(props: {session: Session, eventBus: EventEmitter<{[key: st
   const [present, dismiss] = useIonLoading();
   const [presentMessage] = useIonToast();
   const [presentAlert] = useIonAlert();
-  const foldPopover = useRef<HTMLIonPopoverElement>(null);
-  const [foldPopoverOpen, setFoldPopoverOpen] = useState(false);
   const [inputContent, setInputContent] = useState('');
   const [toolBoxHeight, setToolBoxHeight] = useState(0);
   const [toolBoxElements, setToolBoxElements] = useState(defaultSeq);
@@ -372,7 +370,7 @@ function DocComponent(props: {session: Session, eventBus: EventEmitter<{[key: st
 
   const treeData = useMemo(() => {
     const loop = (docs: DocInfo[]): DataNode[] => {
-      const filterDocs = docs.filter(d => d.name?.includes(searchValue) || d.tag?.includes(searchValue))
+      const filterDocs = docs.filter(d => d.name?.toLowerCase().includes(searchValue.toLowerCase()) || d.tag?.toLowerCase().includes(searchValue.toLowerCase()))
       const tagMap = getTagMap(filterDocs, [], []);
       const menuID2DocID: Array<DocInfo> = [];
       const dataNodes = generateList(tagMap, menuID2DocID, searchValue);
@@ -533,64 +531,70 @@ function DocComponent(props: {session: Session, eventBus: EventEmitter<{[key: st
                                 props.session.applySearch(e.detail.value ?? '');
                               }}></IonSearchbar>
               }
+              <IonButtons slot="end">
+                <IonButton id="tool-trigger">
+                  <IonIcon icon={ellipsisVertical}/>
+                </IonButton>
+              </IonButtons>
+              <IonPopover trigger="tool-trigger" dismissOnSelect={true}>
+                <IonContent>
+                  <IonList>
+                    <IonItem button={true} id="expand-trigger">
+                      <IonIcon aria-hidden="true" icon={chevronCollapseOutline} slot="start"></IonIcon>
+                      <IonLabel>批量展开</IonLabel>
+                    </IonItem>
+                    <IonItem button={true} detail={false} onClick={(e) => {
+                      const sessionDiv = $('.screen-shot-area').get()
+                      if (sessionDiv) {
+                        $('.screen-shot-area').addClass('screen-shot')
+                        setScreenShot(true);
+                        const oldCursor = props.session.cursor.clone();
+                        props.session.cursor.reset();
+                        props.session.emitAsync('updateInner').then(() => {
+                          present({message: '正在生成图片...', backdropDismiss: false}).then(() => {
+                            toPng(sessionDiv[0]).then(dataUrl => {
+                              Filesystem.writeFile({
+                                path: 'share-cache.png',
+                                data: dataUrl.split(',')[1],
+                                directory: Directory.Documents
+                              }).then((result) => {
+                                $('.screen-shot-area').removeClass('screen-shot')
+                                props.session.cursor = oldCursor;
+                                dismiss().then(() => {
+                                  Share.share({
+                                    url: result.uri,
+                                  });
+                                });
+                              });
+                            })
+                          })
+                        })
+                      }
+                    }}>
+                      <IonIcon aria-hidden="true" icon={shareSocialOutline} slot="start"></IonIcon>
+                      <IonLabel>长图分享</IonLabel>
+                    </IonItem>
+                    <IonPopover trigger="expand-trigger" dismissOnSelect={true} side={'start'}>
+                      <IonContent>
+                        <IonList>
+                          {unfoldMenus.map(({key, label}, i) => (
+                            <IonItem key={key} onClick={(e) => {
+                              e.stopPropagation();
+                              const expandLevel = Number(key.substring(1));
+                              props.session.foldBlock(props.session.viewRoot, expandLevel, false).then(() => {
+                                props.session.emit('updateInner');});
+                            }}>
+                              <IonLabel>{label}</IonLabel>
+                            </IonItem>
+                          ))}
+                        </IonList>
+                      </IonContent>
+                    </IonPopover>
+                  </IonList>
+                </IonContent>
+              </IonPopover>
             </IonToolbar>
           </IonHeader>
-          <IonFab slot={'fixed'} horizontal="end" edge={true}>
-            <IonFabButton>
-              <IonIcon icon={ellipsisVertical}/>
-            </IonFabButton>
-            <IonFabList side="bottom">
-              <IonFabButton color={'primary'} onClick={(e) => {
-                foldPopover.current!.event = e;
-                setFoldPopoverOpen(true);
-              }}>
-                <IonIcon icon={chevronCollapseOutline}/>
-              </IonFabButton>
-              <IonFabButton color={'primary'} onClick={(e) => {
-                const sessionDiv = $('.screen-shot-area').get()
-                if (sessionDiv) {
-                  $('.screen-shot-area').addClass('screen-shot')
-                  setScreenShot(true);
-                  present({message: '正在生成图片...', backdropDismiss: false}).then(() => {
-                    toPng(sessionDiv[0]).then(dataUrl => {
-                      Filesystem.writeFile({
-                        path: 'share-cache.png',
-                        data: dataUrl.split(',')[1],
-                        directory: Directory.Documents
-                      }).then((result) => {
-                        $('.screen-shot-area').removeClass('screen-shot')
-                        dismiss().then(() => {
-                          Share.share({
-                            url: result.uri,
-                          });
-                        });
-                      });
-                    })
-                  })
-                }
-              }}>
-                <IonIcon icon={shareSocialOutline}/>
-              </IonFabButton>
-            </IonFabList>
-            <IonPopover ref={foldPopover} reference={'event'} isOpen={foldPopoverOpen} onDidDismiss={() => setFoldPopoverOpen(false)}>
-              <IonContent>
-                <IonList>
-                  {unfoldMenus.map(({key, label}, i) => (
-                    <IonItem key={key} onClick={(e) => {
-                      e.stopPropagation();
-                      const expandLevel = Number(key.substring(1));
-                      props.session.foldBlock(props.session.viewRoot, expandLevel, false).then(() => {
-                        props.session.emit('updateInner');
-                        setFoldPopoverOpen(false);
-                      });
-                    }}>
-                      <IonLabel>{label}</IonLabel>
-                    </IonItem>
-                  ))}
-                </IonList>
-              </IonContent>
-            </IonPopover>
-          </IonFab>
           <IonContent ref={contentRef} fullscreen>
             {
               toolBoxHeight > 0 &&

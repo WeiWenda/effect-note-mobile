@@ -15,6 +15,7 @@ import './assets/css/index.sass';
 import 'vditor/dist/index.css';
 import localforage from "localforage";
 import $ from 'jquery';
+import {IonNav} from "@ionic/react";
 
 const container = document.getElementById('root');
 const root = createRoot(container!);
@@ -57,6 +58,6 @@ $(document).on('click', function(e) {
 });
 root.render(
   // <React.StrictMode>
-    <App session={session}/>
+  <IonNav root={() => <App session={session}/>}></IonNav>
   // </React.StrictMode>
 );

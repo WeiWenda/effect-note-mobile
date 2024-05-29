@@ -190,7 +190,7 @@ function App (props: {session: Session}) {
                   <DocComponent session={props.session} eventBus={eventEmitter} />
                 </Route>
                 <Route exact path="/settings">
-                  <IonNav root={() => <SettingComponent session={props.session} eventBus={eventEmitter} />}></IonNav>
+                  <SettingComponent session={props.session} eventBus={eventEmitter} />
                 </Route>
                 <Route exact path="/search">
                   <Redirect to="/docs" />
