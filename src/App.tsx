@@ -61,7 +61,7 @@ function App (props: {session: Session}) {
       theme = window.matchMedia('(prefers-color-scheme: light)').matches ? themes.Default : themes.Dark;
       if (window.matchMedia('(prefers-color-scheme: light)').matches) {
         document.body.classList.toggle('dark', false);
-        props.session.clientStore.setClientSetting('curTheme', 'Light');
+        props.session.clientStore.setClientSetting('curTheme', 'Default');
       } else {
         document.body.classList.toggle('dark', true);
         props.session.clientStore.setClientSetting('curTheme', 'Dark');

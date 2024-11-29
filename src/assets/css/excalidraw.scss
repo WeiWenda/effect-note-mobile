@@ -61,7 +61,7 @@
   display: flex;
 }
 :root {
-  --excalidraw-node-content-width: 400px;
+  --excalidraw-node-content-width: 300px;
 }
 
 .excalidraw .sidebar.excalidraw-node-content {
@@ -75,8 +75,8 @@
 }
 
 .excalidraw .sidebar.excalidraw-node-content:not(.sidebar--docked) {
-  margin-top: 1em;
-  margin-bottom: 1em;
+  margin-top: 5em;
+  margin-bottom: 5em;
   margin-right: 1em;
   border-radius: 0.5rem
 }
