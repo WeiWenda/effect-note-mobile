@@ -107,7 +107,7 @@ function getTagMap(filteredDocs: DocInfo[], recentDocId: number[], dirtyDocId: n
 function App (props: {session: Session}) {
   const menuRef: React.MutableRefObject<HTMLIonMenuElement | null> = useRef(null);
   const searchDocumentRef: React.MutableRefObject<HTMLIonSearchbarElement | null> = useRef(null);
-  const [editingExcalidraw, setEditingExcalidraw] = useState(true);
+  const [editingExcalidraw, setEditingExcalidraw] = useState(false);
   const [searchValue, setSearchValue] = useState('');
   const [expandedKeys, setExpandedKeys] = useState<React.Key[]>([]);
   const [selectKeys, setSelectKeys] = useState<React.Key[]>([]);

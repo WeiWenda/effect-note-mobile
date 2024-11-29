@@ -9,6 +9,7 @@ import '../assets/css/excalidraw.scss';
 import defaultDraw from './example.excalidraw.json';
 import {ExcalidrawElement, NonDeletedExcalidrawElement} from "@excalidraw/excalidraw/types/element/types";
 import {mimetypeLookup} from "../ts/utils/util";
+import {IonPage} from "@ionic/react";
 
 export function ExcalidrawComponent(props: {
   session: Session,
@@ -149,10 +150,12 @@ export function ExcalidrawComponent(props: {
     return newElement;
   };
   return (
-    <div className='App' ref={appRef}>
-      <div className='excalidraw-wrapper'>
-        {renderExcalidraw(props.children)}
+    <IonPage id="main-content">
+      <div className='App' ref={appRef}>
+        <div className='excalidraw-wrapper'>
+          {renderExcalidraw(props.children)}
+        </div>
       </div>
-    </div>
+    </IonPage>
   );
 }
