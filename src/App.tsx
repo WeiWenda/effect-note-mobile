@@ -2,7 +2,7 @@ import { Redirect, Route } from 'react-router-dom';
 import {
   IonApp, IonContent, IonHeader,
   IonIcon,
-  IonLabel, IonMenu, IonNav,
+  IonLabel, IonMenu, IonMenuButton,
   IonRouterOutlet, IonSearchbar,
   IonTabBar,
   IonTabButton,
@@ -10,7 +10,15 @@ import {
   setupIonicReact, useIonLoading, useIonToast
 } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
-import {searchOutline, fileTrayFullOutline, settingsOutline, createOutline, cloudUploadOutline} from 'ionicons/icons';
+import {
+  searchOutline,
+  fileTrayFullOutline,
+  settingsOutline,
+  createOutline,
+  cloudUploadOutline,
+  menuOutline
+} from 'ionicons/icons';
+import { menuController } from '@ionic/core/components';
 import DocComponent from './pages/DocComponent';
 import SettingComponent from './pages/SettingComponent';
 import { App as AppPlugin } from '@capacitor/app';
@@ -99,7 +107,7 @@ function getTagMap(filteredDocs: DocInfo[], recentDocId: number[], dirtyDocId: n
 function App (props: {session: Session}) {
   const menuRef: React.MutableRefObject<HTMLIonMenuElement | null> = useRef(null);
   const searchDocumentRef: React.MutableRefObject<HTMLIonSearchbarElement | null> = useRef(null);
-  const [editingExcalidraw, setEditingExcalidraw] = useState(false);
+  const [editingExcalidraw, setEditingExcalidraw] = useState(true);
   const [searchValue, setSearchValue] = useState('');
   const [expandedKeys, setExpandedKeys] = useState<React.Key[]>([]);
   const [selectKeys, setSelectKeys] = useState<React.Key[]>([]);
@@ -272,6 +280,9 @@ function App (props: {session: Session}) {
     appendStyleScript(props.session.clientStore);
     props.session.emit('updateInner');
   };
+  async function openDocsMenu() {
+    await menuController.open('docs-menu');
+  }
   useEffect(() => {
     refreshDocs();
     Preferences.get({ key: 'theme' }).then(r => applyTheme(r.value ?? 'auto'));
@@ -434,6 +445,9 @@ function App (props: {session: Session}) {
                 <Route exact path="/search">
                   <Redirect to="/docs" />
                 </Route>
+                <Route exact path="/document">
+                  <Redirect to="/docs" />
+                </Route>
                 <Route exact path={"/input"}>
                   <Redirect to="/docs" />
                 </Route>
@@ -445,6 +459,13 @@ function App (props: {session: Session}) {
                 </Route>
               </IonRouterOutlet>
               <IonTabBar slot="bottom">
+                <IonTabButton tab="tab0" href='/document' onClick={(e) => {
+                  e.stopPropagation();
+                  openDocsMenu();
+                }}>
+                  <IonIcon  aria-hidden="true" icon={menuOutline}/>
+                  <IonLabel>Menu</IonLabel>
+                </IonTabButton>
                 <IonTabButton tab="tab1" href='/search' onClick={(e) => {
                   e.stopPropagation();
                   setTimeout(() => {
@@ -454,45 +475,45 @@ function App (props: {session: Session}) {
                   <IonIcon aria-hidden="true" icon={searchOutline} />
                   <IonLabel>Search</IonLabel>
                 </IonTabButton>
-                {
-                  mode === 'INSERT' &&
-                  <IonTabButton tab="tab2" href='/save' onClick={(e) => {
-                    e.stopPropagation();
-                    setTimeout(() => {
-                      present({message: '正在保存...'}).then(async () => {
-                        $('#input-hack').blur();
-                        const workspace = await Preferences.get({ key: 'workspace' })
-                        const openFile = await Preferences.get({ key: 'open_file' })
-                        if (workspace.value && openFile.value) {
-                          const contentBeforeReplace = await props.session.getCurrentContent(Path.root(), 'application/json', true);
-                          const content = contentBeforeReplace.replaceAll(`http://localhost:51223/${workspace.value ?? 'default'}`, 'http://localhost:51223/api');
-                          GitOperation.updateContent({workspace: workspace.value!, path: openFile.value!, content}).then(() => {
-                            props.session.setMode('NORMAL');
-                            dismiss();
-                          })
-                        } else {
-                          dismiss();
-                        }
-                      })
-                    }, 200);
-                  }}>
-                    <IonIcon aria-hidden="true" icon={cloudUploadOutline} />
-                    <IonLabel>Save</IonLabel>
-                  </IonTabButton>
-                }
-                {
-                  mode === 'NORMAL' &&
-                  <IonTabButton tab="tab3" href='/input' onClick={(e) => {
-                    e.stopPropagation();
-                    setTimeout(() => {
-                      $('#input-hack').focus();
-                      props.session.setMode('INSERT');
-                    }, 200);
-                  }}>
-                    <IonIcon aria-hidden="true" icon={createOutline} />
-                    <IonLabel>Edit</IonLabel>
-                  </IonTabButton>
-                }
+                {/*{*/}
+                {/*  mode === 'INSERT' &&*/}
+                {/*  <IonTabButton tab="tab2" href='/save' onClick={(e) => {*/}
+                {/*    e.stopPropagation();*/}
+                {/*    setTimeout(() => {*/}
+                {/*      present({message: '正在保存...'}).then(async () => {*/}
+                {/*        $('#input-hack').blur();*/}
+                {/*        const workspace = await Preferences.get({ key: 'workspace' })*/}
+                {/*        const openFile = await Preferences.get({ key: 'open_file' })*/}
+                {/*        if (workspace.value && openFile.value) {*/}
+                {/*          const contentBeforeReplace = await props.session.getCurrentContent(Path.root(), 'application/json', true);*/}
+                {/*          const content = contentBeforeReplace.replaceAll(`http://localhost:51223/${workspace.value ?? 'default'}`, 'http://localhost:51223/api');*/}
+                {/*          GitOperation.updateContent({workspace: workspace.value!, path: openFile.value!, content}).then(() => {*/}
+                {/*            props.session.setMode('NORMAL');*/}
+                {/*            dismiss();*/}
+                {/*          })*/}
+                {/*        } else {*/}
+                {/*          dismiss();*/}
+                {/*        }*/}
+                {/*      })*/}
+                {/*    }, 200);*/}
+                {/*  }}>*/}
+                {/*    <IonIcon aria-hidden="true" icon={cloudUploadOutline} />*/}
+                {/*    <IonLabel>Save</IonLabel>*/}
+                {/*  </IonTabButton>*/}
+                {/*}*/}
+                {/*{*/}
+                {/*  mode === 'NORMAL' &&*/}
+                {/*  <IonTabButton tab="tab3" href='/input' onClick={(e) => {*/}
+                {/*    e.stopPropagation();*/}
+                {/*    setTimeout(() => {*/}
+                {/*      $('#input-hack').focus();*/}
+                {/*      props.session.setMode('INSERT');*/}
+                {/*    }, 200);*/}
+                {/*  }}>*/}
+                {/*    <IonIcon aria-hidden="true" icon={createOutline} />*/}
+                {/*    <IonLabel>Edit</IonLabel>*/}
+                {/*  </IonTabButton>*/}
+                {/*}*/}
                 <IonTabButton tab="tab4" href="/docs" onClick={(e) => {
                   e.stopPropagation();
                   props.session.setMode('NORMAL');
