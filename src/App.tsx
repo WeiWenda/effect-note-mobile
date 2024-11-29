@@ -1,12 +1,12 @@
 import { Redirect, Route } from 'react-router-dom';
 import {
-  IonApp,
+  IonApp, IonContent, IonHeader,
   IonIcon,
-  IonLabel, IonNav,
-  IonRouterOutlet,
+  IonLabel, IonMenu, IonNav,
+  IonRouterOutlet, IonSearchbar,
   IonTabBar,
   IonTabButton,
-  IonTabs,
+  IonTabs, IonTitle, IonToolbar,
   setupIonicReact, useIonLoading, useIonToast
 } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
@@ -36,25 +36,216 @@ import '@ionic/react/css/display.css';
 /* Theme variables */
 import './theme/variables.css';
 import {useEventEmitter} from "ahooks";
-import {config, KeyBindings, keyDefinitions, Session, KeyHandler, KeyEmitter, Path, RegisterTypes, SerializedBlock} from "./ts";
-import React, {useEffect, useState} from "react";
-import {appendStyleScript, Theme, themes} from "./ts/themes";
+import {
+  config,
+  KeyBindings,
+  keyDefinitions,
+  Session,
+  KeyHandler,
+  KeyEmitter,
+  Path,
+  RegisterTypes,
+  SerializedBlock,
+  DocInfo
+} from "./ts";
+import React, {useEffect, useMemo, useRef, useState} from "react";
+import {appendStyleScript, getStyles, Theme, themes} from "./ts/themes";
 import {PluginsManager} from "./ts/plugins";
 import {Preferences} from "@capacitor/preferences";
 import './components/plugins';
 import {GitOperation} from "./plugins/git-operation";
-import {message} from "antd";
+import {message, Tree} from "antd";
 import $ from "jquery";
 import {ExcalidrawComponent} from "./pages/ExcalidrawComponent";
+import {DataNode} from "antd/es/tree";
+import {FileOutlined} from "@ant-design/icons";
+import defaultDocs from "./pages/docs.json";
+import {constructDocInfo} from "./ts/utils/util";
 
 setupIonicReact();
-
+class TagTree extends Map<string, TagTree | DocInfo> {};
+function getTagMap(filteredDocs: DocInfo[], recentDocId: number[], dirtyDocId: number[]): TagTree {
+  const tagMap: TagTree = new Map();
+  filteredDocs.forEach(doc => {
+    let menuLabel = doc.name!;
+    if (dirtyDocId.indexOf(doc.id!) !== -1) {
+      menuLabel = '* ' + menuLabel;
+    }
+    const tagList: string[] = [];
+    if (doc.tag) {
+      const jsonArray = JSON.parse(doc.tag);
+      if (Array.isArray(jsonArray) && jsonArray.length > 0) {
+        jsonArray.map(singleTag => {
+          tagList.push((singleTag as string) + '/默认分组');
+        });
+        tagList.forEach(singleTag => {
+          let tagMapTmp: TagTree = tagMap;
+          const tags = singleTag.split('/');
+          for (let i = 0; i < tags.length; i++) {
+            if (!tagMapTmp.has(tags[i])) {
+              tagMapTmp.set(tags[i], new Map());
+            }
+            tagMapTmp = tagMapTmp.get(tags[i]) as TagTree;
+          }
+          tagMapTmp.set(menuLabel, doc);
+        });
+      } else {
+        tagMap.set(menuLabel, doc);
+      }
+    }
+  });
+  return tagMap;
+}
 function App (props: {session: Session}) {
+  const menuRef: React.MutableRefObject<HTMLIonMenuElement | null> = useRef(null);
+  const searchDocumentRef: React.MutableRefObject<HTMLIonSearchbarElement | null> = useRef(null);
+  const [editingExcalidraw, setEditingExcalidraw] = useState(false);
+  const [searchValue, setSearchValue] = useState('');
+  const [expandedKeys, setExpandedKeys] = useState<React.Key[]>([]);
+  const [selectKeys, setSelectKeys] = useState<React.Key[]>([]);
+  const [docs, setDocs] = useState<Array<DocInfo>>([]);
+  const [menuItem2DocId, setMenuItem2DocId] = useState(new Array<DocInfo>());
   const eventEmitter = useEventEmitter<{[key: string]: string}>()
   const [loading, setLoading] = useState(true);
   const [mode, setMode] = useState(props.session.mode)
   const [present, dismiss] = useIonLoading();
   const [presentMessage] = useIonToast();
+  const refreshDocs = () => {
+    Preferences.get({ key: 'workspace' }).then(async (r) => {
+      let remoteUpdated = false
+      let autoUpdateFlag = await Preferences.get({key: 'auto_update'})
+      if (autoUpdateFlag.value !== 'off' && r.value) {
+        remoteUpdated = await present({message: '正在检查更新...', backdropDismiss: true}).then(() =>
+          GitOperation.gitPull({workspace: r.value ?? 'default'}).then(({data}) =>
+            dismiss().then(() => {
+              if (data > 0) {
+                presentMessage({message: `发现${data}个提交`, duration: 300})
+                return true;
+              } else {
+                presentMessage({message: `未发现更新`, duration: 300})
+                return false;
+              }
+            })
+          )
+        )
+      }
+      if (!r.value) {
+        setDocs(defaultDocs);
+        eventEmitter.emit({action: 'open_file', docInfo: JSON.stringify(defaultDocs[0]), checkRemoteUpdate: "false"})
+        return;
+      }
+      GitOperation.listFiles({workspace: r.value!}).then(files => {
+        const newDocs = files.data.filter(file => file.endsWith('.effect.json')).map((file, index) => {
+          return constructDocInfo(file);
+        });
+        setDocs(newDocs);
+        Preferences.get({key: 'open_file'}).then(o => {
+          newDocs.filter(d => d.filepath === o.value).forEach(d => {
+            eventEmitter.emit({action: 'open_file', docInfo: JSON.stringify(d), checkRemoteUpdate: remoteUpdated.toString()})
+          })
+        })
+      }).catch(e => {
+        console.log(e);
+        setDocs(defaultDocs);
+      })
+    })
+  }
+  function getDataNode(
+    label: string,
+    key: React.Key,
+    children: DataNode[] | undefined,
+    searchValue: string
+  ): DataNode {
+    let strTitle: string = label;
+    let isModified = label.startsWith('* ');
+    if (isModified) {
+      strTitle = label.slice(2);
+    }
+    const index = strTitle.indexOf(searchValue);
+    const beforeStr = strTitle.substring(0, index);
+    const afterStr = strTitle.slice(index + searchValue.length);
+    const title =
+      index > -1 ? (
+        <span>
+              {beforeStr}
+          <span style={getStyles(props.session.clientStore, ['theme-text-accent'])}>{searchValue}</span>
+          {afterStr}
+            </span>
+      ) : (
+        <span>{strTitle}</span>
+      );
+    return {
+      key,
+      switcherIcon: children ? undefined : <FileOutlined /> ,
+      children,
+      title
+    } as DataNode;
+  }
+  const generateList = (data: TagTree, menuID2DocID: Array<DocInfo>, searchValue: string) => {
+    const ret: DataNode[] = [];
+    data.forEach((value, key) => {
+      if (value instanceof Map) {
+        const valueMapKeys = Array.from((value as TagTree).keys());
+        const onlyDefault = valueMapKeys.length === 1 && valueMapKeys[0] === '默认分组';
+        if (onlyDefault) {
+          const oldLength = menuID2DocID.length;
+          menuID2DocID.push({});
+          const childItems = generateList(value.get('默认分组') as TagTree, menuID2DocID, searchValue);
+          ret.push(getDataNode(key, oldLength, childItems, searchValue));
+        } else {
+          const oldLength = menuID2DocID.length;
+          menuID2DocID.push({});
+          const childItems = generateList(value, menuID2DocID, searchValue);
+          ret.push(getDataNode(key, oldLength, childItems, searchValue));
+        }
+      } else {
+        ret.push(getDataNode(key, menuID2DocID.length, undefined, searchValue));
+        menuID2DocID.push(value);
+      }
+    });
+    return ret;
+  };
+  const onExpand = (newExpandedKeys: React.Key[]) => {
+    setExpandedKeys(newExpandedKeys);
+  };
+
+  const treeData = useMemo(() => {
+    const loop = (docs: DocInfo[]): DataNode[] => {
+      const filterDocs = docs.filter(d => d.name?.toLowerCase().includes(searchValue.toLowerCase()) || d.tag?.toLowerCase().includes(searchValue.toLowerCase()))
+      const tagMap = getTagMap(filterDocs, [], []);
+      const menuID2DocID: Array<DocInfo> = [];
+      const dataNodes = generateList(tagMap, menuID2DocID, searchValue);
+      setMenuItem2DocId(menuID2DocID);
+      return dataNodes;
+    }
+    return loop(docs);
+  }, [docs, searchValue]);
+  const persistUnSaveContent = async () => {
+    const workspace = await Preferences.get({ key: 'workspace' });
+    const open_file = await Preferences.get({ key: 'open_file'});
+    const unSaveKey = `${workspace.value}:${open_file.value}:unsave`;
+    const content = await props.session.getCurrentContent(Path.root(), 'application/json', true);
+    await Preferences.set({key: unSaveKey, value: content});
+  }
+  const onSelect = (selectedKeys: React.Key[]) => {
+    if (selectedKeys.length === 0) return;
+    const docInfo = menuItem2DocId[Number(selectedKeys[0])];
+    if (!docInfo.filename) {
+      if (expandedKeys.includes(selectedKeys[0])) {
+        setExpandedKeys([...expandedKeys.filter(k => k !== selectedKeys[0])])
+      } else {
+        setExpandedKeys([selectedKeys[0], ...expandedKeys])
+      }
+    } else {
+      setSelectKeys(selectedKeys);
+      console.log('selected', selectedKeys, docInfo);
+      persistUnSaveContent().then(() => {
+        Preferences.set({ key: 'open_file', value: docInfo.filepath!}).then(() => {
+          eventEmitter.emit({action: 'open_file', docInfo: JSON.stringify(docInfo), checkRemoteUpdate: "true"})
+        })
+      });
+    }
+  };
   const applyTheme = (themeName: string) => {
     let theme: Theme;
     if (themeName === 'auto') {
@@ -82,6 +273,7 @@ function App (props: {session: Session}) {
     props.session.emit('updateInner');
   };
   useEffect(() => {
+    refreshDocs();
     Preferences.get({ key: 'theme' }).then(r => applyTheme(r.value ?? 'auto'));
     const mappings = config.defaultMappings;
     const keyBindings = new KeyBindings(keyDefinitions, mappings);
@@ -165,7 +357,7 @@ function App (props: {session: Session}) {
       if (isActive) {
         Preferences.get({ key: 'theme' }).then(r => applyTheme(r.value ?? 'auto'));
       } else {
-        eventEmitter.emit({action: 'persist_unsave'})
+        persistUnSaveContent();
       }
     });
     return () => {
@@ -175,6 +367,8 @@ function App (props: {session: Session}) {
   eventEmitter.useSubscription(val => {
     if (val['action'] === 'theme_change') {
       Preferences.get({ key: 'theme' }).then(r => applyTheme(r.value ?? 'auto'));
+    } else if (val['action'] === 'update_docs') {
+      refreshDocs()
     }
   })
   return (
@@ -186,16 +380,53 @@ function App (props: {session: Session}) {
         {
           !loading &&
           <IonReactRouter>
+            <IonMenu ref={menuRef} menuId="docs-menu" contentId="main-content" swipeGesture={false}>
+              <IonHeader>
+                <IonToolbar>
+                  <IonTitle>目录</IonTitle>
+                </IonToolbar>
+              </IonHeader>
+              <IonContent className="ion-padding">
+                <IonSearchbar ref={searchDocumentRef}
+                              onIonFocus={() => {
+                                props.session.stopKeyMonitor('menu search');
+                              }}
+                              onIonBlur={() => {
+                                props.session.startKeyMonitor()
+                              }}
+                              onIonChange={(e) => {
+                                setSearchValue(e.detail.value!);
+                              }} ></IonSearchbar>
+                <Tree
+                  expandedKeys={searchValue ? Array.from(menuItem2DocId.keys()) : expandedKeys}
+                  onExpand={onExpand}
+                  showIcon={true}
+                  onSelect={(keys, info) => {
+                    info.nativeEvent.stopPropagation();
+                    onSelect(keys);
+                  }}
+                  treeData={treeData}
+                  selectedKeys={selectKeys}
+                  blockNode
+                />
+              </IonContent>
+            </IonMenu>
             <IonTabs>
               <IonRouterOutlet>
                 <Route exact path="/docs">
-                  <ExcalidrawComponent
-                    session={props.session}
-                    eventBus={eventEmitter}
-                    excalidrawLib={ExcalidrawLib}>
-                    <ExcalidrawLib.Excalidraw/>
-                  </ExcalidrawComponent>
-                  {/*<DocComponent session={props.session} eventBus={eventEmitter} />*/}
+                  {
+                    editingExcalidraw &&
+                    <ExcalidrawComponent
+                      session={props.session}
+                      eventBus={eventEmitter}
+                      excalidrawLib={ExcalidrawLib}>
+                      <ExcalidrawLib.Excalidraw/>
+                    </ExcalidrawComponent>
+                  }
+                  {
+                    !editingExcalidraw &&
+                    <DocComponent session={props.session} eventBus={eventEmitter} />
+                  }
                 </Route>
                 <Route exact path="/settings">
                   <SettingComponent session={props.session} eventBus={eventEmitter} />
