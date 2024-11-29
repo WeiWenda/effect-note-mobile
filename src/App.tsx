@@ -15,6 +15,7 @@ import DocComponent from './pages/DocComponent';
 import SettingComponent from './pages/SettingComponent';
 import { App as AppPlugin } from '@capacitor/app';
 import { Clipboard } from '@capacitor/clipboard';
+import * as ExcalidrawLib from '@excalidraw/excalidraw';
 
 /* Core CSS required for Ionic components to work properly */
 import '@ionic/react/css/core.css';
@@ -36,7 +37,7 @@ import '@ionic/react/css/display.css';
 import './theme/variables.css';
 import {useEventEmitter} from "ahooks";
 import {config, KeyBindings, keyDefinitions, Session, KeyHandler, KeyEmitter, Path, RegisterTypes, SerializedBlock} from "./ts";
-import {useEffect, useState} from "react";
+import React, {useEffect, useState} from "react";
 import {appendStyleScript, Theme, themes} from "./ts/themes";
 import {PluginsManager} from "./ts/plugins";
 import {Preferences} from "@capacitor/preferences";
@@ -44,6 +45,7 @@ import './components/plugins';
 import {GitOperation} from "./plugins/git-operation";
 import {message} from "antd";
 import $ from "jquery";
+import {ExcalidrawComponent} from "./pages/ExcalidrawComponent";
 
 setupIonicReact();
 
@@ -187,7 +189,13 @@ function App (props: {session: Session}) {
             <IonTabs>
               <IonRouterOutlet>
                 <Route exact path="/docs">
-                  <DocComponent session={props.session} eventBus={eventEmitter} />
+                  <ExcalidrawComponent
+                    session={props.session}
+                    eventBus={eventEmitter}
+                    excalidrawLib={ExcalidrawLib}>
+                    <ExcalidrawLib.Excalidraw/>
+                  </ExcalidrawComponent>
+                  {/*<DocComponent session={props.session} eventBus={eventEmitter} />*/}
                 </Route>
                 <Route exact path="/settings">
                   <SettingComponent session={props.session} eventBus={eventEmitter} />

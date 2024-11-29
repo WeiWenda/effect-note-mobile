@@ -639,20 +639,15 @@ function DocComponent(props: {session: Session, eventBus: EventEmitter<{[key: st
                                // }
                              }}></ContentEditable>
             <div className={'screen-shot-area'}>
-              <ExcalidrawComponent
-                session={props.session}
-                eventBus={props.eventBus}>
-                <ExcalidrawLib.Excalidraw/>
-              </ExcalidrawComponent>
-              {/*<SessionComponent session={props.session} />*/}
-              {/*{*/}
-              {/*  screenShot && (sharePreference.show_date || sharePreference.show_software || sharePreference.show_user_info) &&*/}
-              {/*  <div style={{fontFamily: 'sans-serif', fontStyle: 'italic',*/}
-              {/*    textAlign: 'right', paddingRight: '10px', paddingBottom: '10px'}}>Written{*/}
-              {/*    sharePreference.show_user_info ? ` By ${sharePreference.user_info}` : ''}{*/}
-              {/*     sharePreference.show_software ? ' With EffectNote' : ''}{*/}
-              {/*      sharePreference.show_date ? ` At ${Moment().format('yyyy/MM/DD')}` : ''}</div>*/}
-              {/*}*/}
+              <SessionComponent session={props.session} />
+              {
+                screenShot && (sharePreference.show_date || sharePreference.show_software || sharePreference.show_user_info) &&
+                <div style={{fontFamily: 'sans-serif', fontStyle: 'italic',
+                  textAlign: 'right', paddingRight: '10px', paddingBottom: '10px'}}>Written{
+                  sharePreference.show_user_info ? ` By ${sharePreference.user_info}` : ''}{
+                   sharePreference.show_software ? ' With EffectNote' : ''}{
+                    sharePreference.show_date ? ` At ${Moment().format('yyyy/MM/DD')}` : ''}</div>
+              }
             </div>
           </IonContent>
         </IonPage>

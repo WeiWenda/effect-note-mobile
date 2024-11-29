@@ -1,10 +1,11 @@
 import {Session} from "../ts";
 import {EventEmitter} from "ahooks/lib/useEventEmitter";
-import {Children, cloneElement, useRef, useState} from "react";
+import React, {Children, cloneElement, useRef, useState} from "react";
 import {ExcalidrawImperativeAPI, ExcalidrawInitialDataState} from "@excalidraw/excalidraw/types/types";
 import {resolvablePromise, ResolvablePromise} from "../ts/utils/excalidraw_utils";
 import type * as TExcalidraw from '@excalidraw/excalidraw';
 import {SessionComponent} from "../components";
+import '../assets/css/excalidraw.scss';
 
 export function ExcalidrawComponent(props: {
   session: Session,
