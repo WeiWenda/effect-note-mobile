@@ -12,7 +12,7 @@ import {
   IonList,
   IonPopover
 } from "@ionic/react";
-import {chevronForwardOutline, homeOutline} from "ionicons/icons";
+import {chevronForwardOutline, homeOutline, homeSharp} from "ionicons/icons";
 import {useEffect, useRef, useState} from "react";
 
 export default function BreadcrumbsComponent(props: {session: Session}) {
@@ -59,7 +59,7 @@ export default function BreadcrumbsComponent(props: {session: Session}) {
             zoomInto(Path.root())}
           }>
             <IonButton>
-              <IonIcon icon={homeOutline}></IonIcon>
+              <IonIcon icon={homeSharp}></IonIcon>
             </IonButton>
             <IonIcon slot="separator" icon={chevronForwardOutline}></IonIcon>
           </IonBreadcrumb>

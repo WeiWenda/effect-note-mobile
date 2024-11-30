@@ -16,7 +16,7 @@ import {
   settingsOutline,
   createOutline,
   cloudUploadOutline,
-  menuOutline
+  menuOutline, homeOutline
 } from 'ionicons/icons';
 import { menuController } from '@ionic/core/components';
 import DocComponent from './pages/DocComponent';
@@ -115,7 +115,6 @@ function App (props: {session: Session}) {
   const [menuItem2DocId, setMenuItem2DocId] = useState(new Array<DocInfo>());
   const eventEmitter = useEventEmitter<{[key: string]: string}>()
   const [loading, setLoading] = useState(true);
-  const [mode, setMode] = useState(props.session.mode)
   const [present, dismiss] = useIonLoading();
   const [presentMessage] = useIonToast();
   const refreshDocs = () => {
@@ -314,9 +313,6 @@ function App (props: {session: Session}) {
     keyHandler.on('handledKey', () => {
       props.session.emit('updateInner');
     });
-    props.session.on('modeChange', (oldMode, newMode) => {
-      setMode(newMode)
-    });
     props.session.on('yank', (info) => {
       let content: string, richContent: string;
       if (info.type === RegisterTypes.CHARS) {
@@ -450,12 +446,6 @@ function App (props: {session: Session}) {
                 <Route exact path="/document">
                   <Redirect to="/docs" />
                 </Route>
-                <Route exact path={"/input"}>
-                  <Redirect to="/docs" />
-                </Route>
-                <Route exact path={"/save"}>
-                  <Redirect to="/docs" />
-                </Route>
                 <Route exact path="/">
                   <Redirect to="/docs" />
                 </Route>
@@ -477,50 +467,11 @@ function App (props: {session: Session}) {
                   <IonIcon aria-hidden="true" icon={searchOutline} />
                   <IonLabel>Search</IonLabel>
                 </IonTabButton>
-                {/*{*/}
-                {/*  mode === 'INSERT' &&*/}
-                {/*  <IonTabButton tab="tab2" href='/save' onClick={(e) => {*/}
-                {/*    e.stopPropagation();*/}
-                {/*    setTimeout(() => {*/}
-                {/*      present({message: '正在保存...'}).then(async () => {*/}
-                {/*        $('#input-hack').blur();*/}
-                {/*        const workspace = await Preferences.get({ key: 'workspace' })*/}
-                {/*        const openFile = await Preferences.get({ key: 'open_file' })*/}
-                {/*        if (workspace.value && openFile.value) {*/}
-                {/*          const contentBeforeReplace = await props.session.getCurrentContent(Path.root(), 'application/json', true);*/}
-                {/*          const content = contentBeforeReplace.replaceAll(`http://localhost:51223/${workspace.value ?? 'default'}`, 'http://localhost:51223/api');*/}
-                {/*          GitOperation.updateContent({workspace: workspace.value!, path: openFile.value!, content}).then(() => {*/}
-                {/*            props.session.setMode('NORMAL');*/}
-                {/*            dismiss();*/}
-                {/*          })*/}
-                {/*        } else {*/}
-                {/*          dismiss();*/}
-                {/*        }*/}
-                {/*      })*/}
-                {/*    }, 200);*/}
-                {/*  }}>*/}
-                {/*    <IonIcon aria-hidden="true" icon={cloudUploadOutline} />*/}
-                {/*    <IonLabel>Save</IonLabel>*/}
-                {/*  </IonTabButton>*/}
-                {/*}*/}
-                {/*{*/}
-                {/*  mode === 'NORMAL' &&*/}
-                {/*  <IonTabButton tab="tab3" href='/input' onClick={(e) => {*/}
-                {/*    e.stopPropagation();*/}
-                {/*    setTimeout(() => {*/}
-                {/*      $('#input-hack').focus();*/}
-                {/*      props.session.setMode('INSERT');*/}
-                {/*    }, 200);*/}
-                {/*  }}>*/}
-                {/*    <IonIcon aria-hidden="true" icon={createOutline} />*/}
-                {/*    <IonLabel>Edit</IonLabel>*/}
-                {/*  </IonTabButton>*/}
-                {/*}*/}
                 <IonTabButton tab="tab4" href="/docs" onClick={(e) => {
                   e.stopPropagation();
                   props.session.setMode('NORMAL');
                 }}>
-                  <IonIcon aria-hidden="true" icon={fileTrayFullOutline} />
+                  <IonIcon aria-hidden="true" icon={homeOutline} />
                   <IonLabel>Home</IonLabel>
                 </IonTabButton>
                 <IonTabButton tab="tab5" href="/settings">

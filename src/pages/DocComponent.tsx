@@ -23,7 +23,7 @@ import {
 import {
   ellipsisVertical,
   chevronCollapseOutline,
-  shareSocialOutline
+  shareSocialOutline, cloudUploadOutline, createOutline, checkmarkOutline, saveOutline, createSharp
 } from "ionicons/icons";
 import {menuController} from '@ionic/core/components';
 import React, {useEffect, useMemo, useRef, useState} from "react";
@@ -65,6 +65,7 @@ const unfoldMenus = [
 function DocComponent(props: {session: Session, eventBus: EventEmitter<{[key: string]: string}>}) {
   const searchContentRef: React.MutableRefObject<HTMLIonSearchbarElement | null> = useRef(null);
   const contentRef: React.MutableRefObject<any | null> = useRef(null);
+  const [mode, setMode] = useState(props.session.mode)
   const [contentSearchValue, setContentSearchValue] = useState('');
   const [searching, setSearching] = useState(false);
   const [screenShot, setScreenShot] = useState(false);
@@ -159,6 +160,9 @@ function DocComponent(props: {session: Session, eventBus: EventEmitter<{[key: st
     props.session.on('scrollTo', async (clickY) => {
       await contentRef.current?.scrollByPoint(0, clickY - window.innerHeight/2, 100);
       return Promise.resolve()
+    });
+    props.session.on('modeChange', (oldMode, newMode) => {
+      setMode(newMode)
     });
     const gesture = createGesture({
       el: contentRef.current,
@@ -288,6 +292,41 @@ function DocComponent(props: {session: Session, eventBus: EventEmitter<{[key: st
           <IonHeader>
             <IonToolbar>
               <IonButtons slot="start">
+                {
+                  mode === 'INSERT' &&
+                  <IonButton id={'save-button'} onClick={(e) => {
+                    e.stopPropagation();
+                    present({message: '正在保存...'}).then(async () => {
+                      $('#input-hack').blur();
+                      const workspace = await Preferences.get({ key: 'workspace' })
+                      const openFile = await Preferences.get({ key: 'open_file' })
+                      if (workspace.value && openFile.value) {
+                        const contentBeforeReplace = await props.session.getCurrentContent(Path.root(), 'application/json', true);
+                        const content = contentBeforeReplace.replaceAll(`http://localhost:51223/${workspace.value ?? 'default'}`, 'http://localhost:51223/api');
+                        GitOperation.updateContent({workspace: workspace.value!, path: openFile.value!, content}).then(() => {
+                          props.session.setMode('NORMAL');
+                          dismiss();
+                        })
+                      } else {
+                        dismiss();
+                      }
+                    })
+                  }}>
+                    <IonIcon aria-hidden="true" icon={saveOutline} />
+                  </IonButton>
+                }
+                {
+                  mode === 'NORMAL' &&
+                  <IonButton id="edit-button" onClick={(e) => {
+                    e.stopPropagation();
+                    setTimeout(() => {
+                      $('#input-hack').focus();
+                      props.session.setMode('INSERT');
+                    }, 200);
+                  }}>
+                    <IonIcon aria-hidden="true" icon={createSharp} />
+                  </IonButton>
+                }
                 {
                   !searching &&
                   <BreadcrumbsComponent session={props.session}/>
