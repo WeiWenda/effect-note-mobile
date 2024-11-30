@@ -143,12 +143,13 @@ function App (props: {session: Session}) {
         return;
       }
       GitOperation.listFiles({workspace: r.value!}).then(files => {
-        const newDocs = files.data.filter(file => file.endsWith('.effect.json')).map((file, index) => {
+        const newDocs = files.data.filter(file => file.endsWith('.effect.json') || file.endsWith('.excalidraw')).map((file, index) => {
           return constructDocInfo(file);
         });
         setDocs(newDocs);
         Preferences.get({key: 'open_file'}).then(o => {
           newDocs.filter(d => d.filepath === o.value).forEach(d => {
+            setEditingExcalidraw(d.filepath!.endsWith('.excalidraw'));
             eventEmitter.emit({action: 'open_file', docInfo: JSON.stringify(d), checkRemoteUpdate: remoteUpdated.toString()})
           })
         })
@@ -248,6 +249,7 @@ function App (props: {session: Session}) {
       setSelectKeys(selectedKeys);
       console.log('selected', selectedKeys, docInfo);
       persistUnSaveContent().then(() => {
+        setEditingExcalidraw(docInfo.filepath!.endsWith('.excalidraw'));
         Preferences.set({ key: 'open_file', value: docInfo.filepath!}).then(() => {
           eventEmitter.emit({action: 'open_file', docInfo: JSON.stringify(docInfo), checkRemoteUpdate: "true"})
         })

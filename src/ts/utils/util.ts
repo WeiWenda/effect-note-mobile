@@ -88,7 +88,7 @@ export function constructDocInfo(filepath: string): DocInfo {
     const name = nameSplits.shift();
     const tag = paths.join('/');
     const otherTags = nameSplits.filter(split => {
-        return split && split !== 'json' && split !== 'effect'
+        return split && split !== 'json' && split !== 'effect' && split != 'excalidraw'
     })
     return {name,
         filename: filepath.split('/').pop(),

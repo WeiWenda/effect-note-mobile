@@ -265,7 +265,10 @@ function DocComponent(props: {session: Session, eventBus: EventEmitter<{[key: st
   }
   props.eventBus.useSubscription(val => {
     if (val['action'] === 'open_file') {
-      reloadContent(JSON.parse(val['docInfo']) as DocInfo, Boolean(val['checkRemoteUpdate']));
+      const docInfo = JSON.parse(val['docInfo']) as DocInfo
+      if (docInfo.filepath?.endsWith('.effect.json')) {
+        reloadContent(docInfo, Boolean(val['checkRemoteUpdate']));
+      }
     } else if (val['action'] === 'start_search') {
       setSearching(true);
       setTimeout(() => {

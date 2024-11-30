@@ -46,6 +46,14 @@ export function ExcalidrawComponent(props: {
       elements: elements
     });
   }, []);
+  props.eventBus.useSubscription(val => {
+    if (val['action'] === 'open_file') {
+      const docInfo = JSON.parse(val['docInfo']) as DocInfo
+      if (docInfo.filepath?.endsWith('.excalidraw')) {
+        console.log('打开图谱笔记')
+      }
+    }
+  })
   const loadDoc = async (docInfo: DocInfo, docContent: string) => {
     const docID = docInfo.id!;
     const newDocName = docID.toString();
