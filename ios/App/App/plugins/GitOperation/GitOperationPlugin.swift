@@ -9,8 +9,17 @@ import Foundation
 import Capacitor
 
 @objc(GitOperationPlugin)
-public class GitOperationPlugin: CAPPlugin {
-
+public class GitOperationPlugin: CAPPlugin, CAPBridgedPlugin {
+  public let identifier = "GitOperationPlugin"
+  public let jsName = "GitOperation"
+  public let pluginMethods: [CAPPluginMethod] = [
+    CAPPluginMethod(name: "listFiles", returnType: CAPPluginReturnPromise),
+    CAPPluginMethod(name: "blobContent", returnType: CAPPluginReturnPromise),
+    CAPPluginMethod(name: "updateContent", returnType: CAPPluginReturnPromise),
+    CAPPluginMethod(name: "gitClone", returnType: CAPPluginReturnPromise),
+    CAPPluginMethod(name: "gitPull", returnType: CAPPluginReturnPromise),
+  ]
+    
   private let implementation = GitOperation()
   
   override public func load() {

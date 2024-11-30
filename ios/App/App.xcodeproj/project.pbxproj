@@ -12,7 +12,7 @@
 		048B60302B0B88BE00B6C3D7 /* ObjectiveGit.framework.dSYM in Copy Files */ = {isa = PBXBuildFile; fileRef = 048B602F2B0B88BE00B6C3D7 /* ObjectiveGit.framework.dSYM */; };
 		04BEB7462B0B40030060007B /* GitOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04BEB7452B0B40030060007B /* GitOperation.swift */; };
 		04BEB74A2B0B40A10060007B /* GitOperationPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04BEB7492B0B40A10060007B /* GitOperationPlugin.swift */; };
-		04BEB7502B0B457A0060007B /* GitOperationPlugin.m in Sources */ = {isa = PBXBuildFile; fileRef = 04BEB74F2B0B457A0060007B /* GitOperationPlugin.m */; };
+		272DFDF12CFB25FB004989BC /* MyViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 272DFDF02CFB25FB004989BC /* MyViewController.swift */; };
 		2FAD9763203C412B000D30F8 /* config.xml in Resources */ = {isa = PBXBuildFile; fileRef = 2FAD9762203C412B000D30F8 /* config.xml */; };
 		50379B232058CBB4000EE86E /* capacitor.config.json in Resources */ = {isa = PBXBuildFile; fileRef = 50379B222058CBB4000EE86E /* capacitor.config.json */; };
 		504EC3081FED79650016851F /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 504EC3071FED79650016851F /* AppDelegate.swift */; };
@@ -50,13 +50,12 @@
 
 /* Begin PBXFileReference section */
 		048B60212B0B850700B6C3D7 /* ObjectiveGit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ObjectiveGit.framework; path = ../../../../../Downloads/Carthage/Build/iOS/ObjectiveGit.framework; sourceTree = "<group>"; };
-		048B60262B0B863400B6C3D7 /* ObjectiveGit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = ObjectiveGit.framework; sourceTree = "<group>"; };
 		048B602B2B0B887A00B6C3D7 /* ObjectiveGit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ObjectiveGit.framework; path = Carthage/Build/iOS/ObjectiveGit.framework; sourceTree = "<group>"; };
 		048B602F2B0B88BE00B6C3D7 /* ObjectiveGit.framework.dSYM */ = {isa = PBXFileReference; lastKnownFileType = wrapper.dsym; name = ObjectiveGit.framework.dSYM; path = Carthage/Build/iOS/ObjectiveGit.framework.dSYM; sourceTree = "<group>"; };
 		04BEB7452B0B40030060007B /* GitOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitOperation.swift; sourceTree = "<group>"; };
 		04BEB7492B0B40A10060007B /* GitOperationPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitOperationPlugin.swift; sourceTree = "<group>"; };
 		04BEB74E2B0B45790060007B /* App-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "App-Bridging-Header.h"; sourceTree = "<group>"; };
-		04BEB74F2B0B457A0060007B /* GitOperationPlugin.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = GitOperationPlugin.m; sourceTree = "<group>"; };
+		272DFDF02CFB25FB004989BC /* MyViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyViewController.swift; sourceTree = "<group>"; };
 		2FAD9762203C412B000D30F8 /* config.xml */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = config.xml; sourceTree = "<group>"; };
 		50379B222058CBB4000EE86E /* capacitor.config.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = capacitor.config.json; sourceTree = "<group>"; };
 		504EC3041FED79650016851F /* App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = App.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -97,7 +96,6 @@
 			children = (
 				04BEB7452B0B40030060007B /* GitOperation.swift */,
 				04BEB7492B0B40A10060007B /* GitOperationPlugin.swift */,
-				04BEB74F2B0B457A0060007B /* GitOperationPlugin.m */,
 				04BEB74E2B0B45790060007B /* App-Bridging-Header.h */,
 			);
 			path = GitOperation;
@@ -107,7 +105,6 @@
 			isa = PBXGroup;
 			children = (
 				048B60212B0B850700B6C3D7 /* ObjectiveGit.framework */,
-				048B60262B0B863400B6C3D7 /* ObjectiveGit.framework */,
 				048B602B2B0B887A00B6C3D7 /* ObjectiveGit.framework */,
 				AF277DCFFFF123FFC6DF26C7 /* Pods_App.framework */,
 			);
@@ -145,6 +142,7 @@
 				504EC3131FED79650016851F /* Info.plist */,
 				2FAD9762203C412B000D30F8 /* config.xml */,
 				50B271D01FEDC1A000F3C39B /* public */,
+				272DFDF02CFB25FB004989BC /* MyViewController.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -295,8 +293,8 @@
 			files = (
 				04BEB7462B0B40030060007B /* GitOperation.swift in Sources */,
 				504EC3081FED79650016851F /* AppDelegate.swift in Sources */,
+				272DFDF12CFB25FB004989BC /* MyViewController.swift in Sources */,
 				04BEB74A2B0B40A10060007B /* GitOperationPlugin.swift in Sources */,
-				04BEB7502B0B457A0060007B /* GitOperationPlugin.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

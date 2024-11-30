@@ -59,7 +59,7 @@ export default function BreadcrumbsComponent(props: {session: Session}) {
             zoomInto(Path.root())}
           }>
             <IonButton>
-              <IonIcon icon={homeSharp}></IonIcon>
+              <IonIcon icon={homeOutline}></IonIcon>
             </IonButton>
             <IonIcon slot="separator" icon={chevronForwardOutline}></IonIcon>
           </IonBreadcrumb>

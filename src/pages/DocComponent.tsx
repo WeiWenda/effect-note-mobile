@@ -324,7 +324,7 @@ function DocComponent(props: {session: Session, eventBus: EventEmitter<{[key: st
                       props.session.setMode('INSERT');
                     }, 200);
                   }}>
-                    <IonIcon aria-hidden="true" icon={createSharp} />
+                    <IonIcon aria-hidden="true" icon={createOutline} />
                   </IonButton>
                 }
                 {
