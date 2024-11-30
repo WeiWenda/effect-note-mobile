@@ -1,4 +1,4 @@
-import {DocInfo, InMemory, Path, Session} from "../ts";
+import {config, DocInfo, InMemory, Path, Session} from "../ts";
 import {EventEmitter} from "ahooks/lib/useEventEmitter";
 import React, {Children, cloneElement, useCallback, useEffect, useRef, useState} from "react";
 import {ExcalidrawImperativeAPI, ExcalidrawInitialDataState} from "@excalidraw/excalidraw/types/types";
@@ -10,6 +10,8 @@ import defaultDraw from './example.excalidraw.json';
 import {ExcalidrawElement, NonDeletedExcalidrawElement} from "@excalidraw/excalidraw/types/element/types";
 import {mimetypeLookup} from "../ts/utils/util";
 import {IonPage} from "@ionic/react";
+import {GitOperation} from "../plugins/git-operation";
+import {Preferences} from "@capacitor/preferences";
 
 export function ExcalidrawComponent(props: {
   session: Session,
@@ -34,7 +36,6 @@ export function ExcalidrawComponent(props: {
   const [excalidrawAPI, setExcalidrawAPI] = useState<ExcalidrawImperativeAPI | null>(null);
 
   useEffect(() => {
-    const elements = defaultDraw.elements as readonly ExcalidrawElement[];
     // @ts-ignore
     initialStatePromiseRef.current.promise.resolve({
       libraryItems: [],
@@ -43,14 +44,30 @@ export function ExcalidrawComponent(props: {
         currentItemFontFamily: defaultDraw.appState?.currentItemFontFamily ?? 2,
         viewBackgroundColor: defaultDraw.appState?.viewBackgroundColor ?? props.session.clientStore.getClientSetting('theme-bg-primary')
       },
-      elements: elements
+      elements: []
     });
   }, []);
+  const reloadContent = async (docInfo: DocInfo, checkRemoteUpdate: boolean) => {
+    const workspace = await Preferences.get({ key: 'workspace' });
+    const savedContent = await GitOperation.blobContent({workspace: workspace.value ?? 'default', path: docInfo.filepath!}).then(r => {
+      return JSON.parse(r.data)
+    }).catch(e => {
+      return defaultDraw;
+    });
+    const elements = savedContent.elements as readonly ExcalidrawElement[];
+    // @ts-ignore
+    excalidrawAPI?.updateScene({
+      elements, appState: {
+        currentItemFontFamily: savedContent.appState?.currentItemFontFamily ?? 2,
+        viewBackgroundColor: savedContent.appState?.viewBackgroundColor ?? props.session.clientStore.getClientSetting('theme-bg-primary')
+      }
+    });
+  }
   props.eventBus.useSubscription(val => {
     if (val['action'] === 'open_file') {
       const docInfo = JSON.parse(val['docInfo']) as DocInfo
       if (docInfo.filepath?.endsWith('.excalidraw')) {
-        console.log('打开图谱笔记')
+        reloadContent(docInfo, true)
       }
     }
   })
