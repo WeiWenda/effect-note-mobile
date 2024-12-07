@@ -12,6 +12,7 @@ import {mimetypeLookup} from "../ts/utils/util";
 import {IonPage} from "@ionic/react";
 import {GitOperation} from "../plugins/git-operation";
 import {Preferences} from "@capacitor/preferences";
+import {restoreElements} from "@excalidraw/excalidraw";
 
 export function ExcalidrawComponent(props: {
   session: Session,
@@ -55,13 +56,19 @@ export function ExcalidrawComponent(props: {
       return defaultDraw;
     });
     const elements = savedContent.elements as readonly ExcalidrawElement[];
+    const restoreElements1 = restoreElements(elements, null)
+    excalidrawAPI?.setActiveTool({ type: "hand" })
     // @ts-ignore
     excalidrawAPI?.updateScene({
-      elements, appState: {
+      elements: restoreElements1, appState: {
+
         currentItemFontFamily: savedContent.appState?.currentItemFontFamily ?? 2,
         viewBackgroundColor: savedContent.appState?.viewBackgroundColor ?? props.session.clientStore.getClientSetting('theme-bg-primary')
       }
     });
+    setTimeout(() => {
+      excalidrawAPI?.scrollToContent(restoreElements1, {fitToContent: true})
+    }, 500)
   }
   props.eventBus.useSubscription(val => {
     if (val['action'] === 'open_file') {
@@ -140,7 +147,7 @@ export function ExcalidrawComponent(props: {
       {
         theme: props.session.clientStore.getClientSetting('curTheme') === 'Default' ? 'light' : 'dark',
         langCode: 'zh-CN',
-        viewModeEnabled: true,
+        // viewModeEnabled: true,
         excalidrawAPI: (api: ExcalidrawImperativeAPI) => setExcalidrawAPI(api),
         initialData: initialStatePromiseRef.current.promise,
         validateEmbeddable: true,
@@ -165,7 +172,7 @@ export function ExcalidrawComponent(props: {
             </div>
           </Sidebar.Header>
           <div
-            style={{height: '100%'}}
+            style={{height: '100%', overflow: 'auto'}}
           >
             <SessionComponent session={props.session}/>
           </div>
