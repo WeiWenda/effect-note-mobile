@@ -26,6 +26,7 @@ export function ExcalidrawComponent(props: {
   const appRef = useRef<any>(null);
   const [selectNodeId, setSelectNodeId] = useState<string>('');
   const [editingDocId, setEditingDocId] = useState<number>(-3);
+  const [initialized, setInitialized] = React.useState(false);
   const [editingElementText, setEditingElementText] = useState<string>('节点详情');
   const initialStatePromiseRef = useRef<{
     promise: ResolvablePromise<ExcalidrawInitialDataState | null>;
@@ -36,18 +37,6 @@ export function ExcalidrawComponent(props: {
   }
   const [excalidrawAPI, setExcalidrawAPI] = useState<ExcalidrawImperativeAPI | null>(null);
 
-  useEffect(() => {
-    // @ts-ignore
-    initialStatePromiseRef.current.promise.resolve({
-      libraryItems: [],
-      scrollToContent: false,
-      appState: {
-        currentItemFontFamily: defaultDraw.appState?.currentItemFontFamily ?? 2,
-        viewBackgroundColor: defaultDraw.appState?.viewBackgroundColor ?? props.session.clientStore.getClientSetting('theme-bg-primary')
-      },
-      elements: []
-    });
-  }, []);
   const reloadContent = async (docInfo: DocInfo, checkRemoteUpdate: boolean) => {
     const workspace = await Preferences.get({ key: 'workspace' });
     const savedContent = await GitOperation.blobContent({workspace: workspace.value ?? 'default', path: docInfo.filepath!}).then(r => {
@@ -57,18 +46,31 @@ export function ExcalidrawComponent(props: {
     });
     const elements = savedContent.elements as readonly ExcalidrawElement[];
     const restoreElements1 = restoreElements(elements, null)
-    excalidrawAPI?.setActiveTool({ type: "hand" })
-    // @ts-ignore
-    excalidrawAPI?.updateScene({
-      elements: restoreElements1, appState: {
-
-        currentItemFontFamily: savedContent.appState?.currentItemFontFamily ?? 2,
-        viewBackgroundColor: savedContent.appState?.viewBackgroundColor ?? props.session.clientStore.getClientSetting('theme-bg-primary')
-      }
-    });
-    setTimeout(() => {
-      excalidrawAPI?.scrollToContent(restoreElements1, {fitToContent: true})
-    }, 500)
+    if (!initialized) {
+      initialStatePromiseRef.current.promise.resolve({
+        libraryItems: [],
+        scrollToContent: true,
+        appState: {
+          activeTool: {lastActiveTool: null, locked: false, type: "hand", customType: null},
+          currentItemFontFamily: savedContent.appState?.currentItemFontFamily ?? 2,
+          viewBackgroundColor: savedContent.appState?.viewBackgroundColor ?? props.session.clientStore.getClientSetting('theme-bg-primary')
+        },
+        elements: restoreElements1
+      });
+      setInitialized(true);
+    } else {
+      excalidrawAPI?.setActiveTool({ type: "hand" })
+      // @ts-ignore
+      excalidrawAPI?.updateScene({
+        elements: restoreElements1, appState: {
+          currentItemFontFamily: savedContent.appState?.currentItemFontFamily ?? 2,
+          viewBackgroundColor: savedContent.appState?.viewBackgroundColor ?? props.session.clientStore.getClientSetting('theme-bg-primary')
+        }
+      });
+      setTimeout(() => {
+        excalidrawAPI?.scrollToContent(restoreElements1, {fitToContent: true})
+      }, 500)
+    }
   }
   props.eventBus.useSubscription(val => {
     if (val['action'] === 'open_file') {
